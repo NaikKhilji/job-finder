@@ -1340,7 +1340,7 @@ body {
 
 /* ===== EMPTY STATES ===== */
 .empty-state { padding: 3rem 1rem; }
-.empty-state i { display: block; margin: 0 auto 1rem; }
+.empty-state > i { display: block; margin: 0 auto 1rem; }
 
 /* ===== ERROR PAGES ===== */
 .error-page {
