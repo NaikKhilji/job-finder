@@ -84,22 +84,6 @@ def create_app(config_class=Config):
         app.register_blueprint(linkedin_bp, url_prefix='/auth/linkedin')
         csrf.exempt(linkedin_bp)
 
-    # ── OAuth debug route (dev only) ────────────────────────────────────────
-    @app.route('/oauth-uris')
-    def oauth_uris():
-        from flask import jsonify, url_for
-        uris = {}
-        try:
-            uris['google_redirect_uri'] = url_for('google.authorized', _external=True)
-        except Exception:
-            uris['google_redirect_uri'] = 'Google OAuth not configured'
-        try:
-            uris['linkedin_redirect_uri'] = url_for('linkedin.authorized', _external=True)
-        except Exception:
-            uris['linkedin_redirect_uri'] = 'LinkedIn OAuth not configured'
-        uris['note'] = 'Register these EXACT URIs in your developer consoles'
-        return jsonify(uris)
-
     # Create upload directories
     for folder in ['avatars', 'logos', 'resumes']:
         os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], folder), exist_ok=True)
