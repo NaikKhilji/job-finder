@@ -1,34 +1,112 @@
 {% extends "base.html" %}
+
 {% block title %}{{ job.title }} at {{ job.company.name }} — JobFinder{% endblock %}
+
+{% block meta_description %}{{ job.title }} at {{ job.company.name }} in {{ job.location }}. {{ job.job_type }} · {{ job.experience_level }} · {{ job.salary_display }}. Apply on JobFinder today.{% endblock %}
+{% block og_title %}{{ job.title }} at {{ job.company.name }}{% endblock %}
+{% block og_description %}{{ job.job_type }} · {{ job.location }} · {{ job.salary_display }}. Apply now on JobFinder.{% endblock %}
+{% block twitter_title %}{{ job.title }} at {{ job.company.name }}{% endblock %}
+{% block twitter_description %}{{ job.job_type }} · {{ job.location }} · {{ job.salary_display }}.{% endblock %}
+
+{% block extra_head %}
+<!-- JSON-LD: JobPosting structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "JobPosting",
+  "title": {{ job.title | tojson }},
+  "description": {{ (job.description ~ '\n\n' ~ job.requirements) | tojson }},
+  "datePosted": "{{ job.created_at.strftime('%Y-%m-%d') }}",
+  {% if job.deadline %}"validThrough": "{{ job.deadline.strftime('%Y-%m-%dT00:00:00') }}",{% endif %}
+  "employmentType": "{{ job.job_type | upper | replace('-', '_') | replace(' ', '_') }}",
+  "hiringOrganization": {
+    "@type": "Organization",
+    "name": {{ job.company.name | tojson }},
+    "sameAs": {{ job.company.website | tojson if job.company.website else '""' }}
+  },
+  "jobLocation": {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": {{ job.location | tojson }}
+    }
+  },
+  {% if job.salary_min or job.salary_max %}
+  "baseSalary": {
+    "@type": "MonetaryAmount",
+    "currency": "USD",
+    "value": {
+      "@type": "QuantitativeValue",
+      {% if job.salary_min %}"minValue": {{ job.salary_min }},{% endif %}
+      {% if job.salary_max %}"maxValue": {{ job.salary_max }},{% endif %}
+      "unitText": "YEAR"
+    }
+  },
+  {% endif %}
+  "experienceRequirements": {{ job.experience_level | tojson }},
+  "skills": {{ job.skills_required | tojson }},
+  "url": "{{ request.url }}"
+}
+</script>
+
+<!-- Breadcrumb JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ url_for('main.index', _external=True) }}" },
+    { "@type": "ListItem", "position": 2, "name": "Jobs", "item": "{{ url_for('jobs.listing', _external=True) }}" },
+    { "@type": "ListItem", "position": 3, "name": {{ job.title | tojson }}, "item": "{{ request.url }}" }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="container py-5">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('jobs.listing') }}">Jobs</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ job.title }}</li>
+    </ol>
+  </nav>
+
   <div class="row g-4 job-detail-row">
 
     <!-- ===== JOB MAIN CONTENT ===== -->
     <div class="col-lg-8">
 
       <!-- Job Header Card -->
-      <div class="card job-detail-header mb-4">
+      <div class="card job-detail-header mb-4" data-aos="fade-up">
         <div class="card-body p-4 p-md-5">
           <div class="d-flex align-items-start gap-4 flex-wrap">
             <!-- Company Logo -->
             <div class="company-logo-lg flex-shrink-0">
               {% if job.company.logo != 'default_company.png' %}
                 <img src="{{ url_for('main.uploaded_file', folder='logos', filename=job.company.logo) }}"
-                     alt="{{ job.company.name }}" class="logo-img-lg">
+                     alt="{{ job.company.name }} logo" class="logo-img-lg">
               {% else %}
-                <div class="logo-placeholder-lg">{{ job.company.name[0] | upper }}</div>
+                <div class="logo-placeholder-lg" aria-label="{{ job.company.name }}">{{ job.company.name[0] | upper }}</div>
               {% endif %}
             </div>
 
             <div class="flex-grow-1">
               <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
                 <div>
-                  <h2 class="job-detail-title mb-1">{{ job.title }}</h2>
+                  <h1 class="job-detail-title mb-1 h2">{{ job.title }}</h1>
                   <div class="text-muted mb-3">
-                    <i class="fas fa-building me-1"></i>
-                    <strong>{{ job.company.name }}</strong>
+                    <i class="fas fa-building me-1" aria-hidden="true"></i>
+                    <a href="{{ url_for('main.company_profile', company_id=job.company.id) }}"
+                       class="text-decoration-none fw-semibold text-body">{{ job.company.name }}</a>
+                    {% if job.company.is_verified %}
+                      <span class="badge bg-primary ms-1" title="Verified Company">
+                        <i class="fas fa-check-circle me-1" aria-hidden="true"></i>Verified
+                      </span>
+                    {% endif %}
                   </div>
                 </div>
                 <!-- Save Button -->
@@ -36,8 +114,9 @@
                 <form method="POST" action="{{ url_for('jobs.save_job', job_id=job.id) }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit"
-                          class="btn {{ 'btn-primary' if is_saved else 'btn-outline-secondary' }} btn-sm">
-                    <i class="{{ 'fas' if is_saved else 'far' }} fa-bookmark me-1"></i>
+                          class="btn {{ 'btn-primary' if is_saved else 'btn-outline-secondary' }} btn-sm"
+                          aria-label="{{ 'Remove from saved jobs' if is_saved else 'Save this job' }}">
+                    <i class="{{ 'fas' if is_saved else 'far' }} fa-bookmark me-1" aria-hidden="true"></i>
                     {{ 'Saved' if is_saved else 'Save Job' }}
                   </button>
                 </form>
@@ -46,17 +125,17 @@
 
               <!-- Meta badges -->
               <div class="d-flex flex-wrap gap-3 text-muted small">
-                <span><i class="fas fa-map-marker-alt me-1 text-primary"></i>{{ job.location }}</span>
+                <span><i class="fas fa-map-marker-alt me-1 text-primary" aria-hidden="true"></i>{{ job.location }}</span>
                 <span>
-                  <i class="fas fa-briefcase me-1 text-primary"></i>
+                  <i class="fas fa-briefcase me-1 text-primary" aria-hidden="true"></i>
                   <span class="badge job-type-badge badge-{{ job.job_type | lower | replace(' ', '') }}">{{ job.job_type }}</span>
                 </span>
-                <span><i class="fas fa-layer-group me-1 text-primary"></i>{{ job.experience_level }}</span>
-                <span><i class="fas fa-dollar-sign me-1 text-primary"></i>{{ job.salary_display }}</span>
-                <span><i class="fas fa-clock me-1 text-primary"></i>Posted {{ job.created_at.strftime('%B %d, %Y') }}</span>
+                <span><i class="fas fa-layer-group me-1 text-primary" aria-hidden="true"></i>{{ job.experience_level }}</span>
+                <span><i class="fas fa-dollar-sign me-1 text-primary" aria-hidden="true"></i>{{ job.salary_display }}</span>
+                <span><i class="fas fa-clock me-1 text-primary" aria-hidden="true"></i>Posted {{ job.created_at.strftime('%B %d, %Y') }}</span>
                 {% if job.deadline %}
                 <span class="{{ 'text-danger' if is_expired else 'text-warning' }}">
-                  <i class="fas fa-calendar-times me-1"></i>
+                  <i class="fas fa-calendar-times me-1" aria-hidden="true"></i>
                   {{ 'Expired' if is_expired else 'Deadline' }}: {{ job.deadline.strftime('%B %d, %Y') }}
                 </span>
                 {% endif %}
@@ -66,44 +145,94 @@
 
           <!-- Skills -->
           {% if job.skills_required %}
-          <div class="job-tags mt-4">
+          <div class="job-tags mt-4" role="list" aria-label="Required skills">
             {% for skill in job.skills_required.split(',') %}
-              <span class="tag">{{ skill.strip() }}</span>
+              <span class="tag" role="listitem">{{ skill.strip() }}</span>
             {% endfor %}
           </div>
           {% endif %}
+
+          <!-- Share buttons -->
+          <div class="d-flex gap-2 mt-4 flex-wrap align-items-center">
+            <span class="text-muted small fw-medium">Share:</span>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url | urlencode }}"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-sm btn-outline-secondary share-btn"
+               aria-label="Share on LinkedIn">
+              <i class="fab fa-linkedin me-1" aria-hidden="true"></i>LinkedIn
+            </a>
+            <a href="https://twitter.com/intent/tweet?text={{ (job.title ~ ' at ' ~ job.company.name) | urlencode }}&url={{ request.url | urlencode }}"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-sm btn-outline-secondary share-btn"
+               aria-label="Share on X (Twitter)">
+              <i class="fab fa-x-twitter me-1" aria-hidden="true"></i>X
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary share-btn"
+                    id="copyLinkBtn" aria-label="Copy job link to clipboard"
+                    data-url="{{ request.url }}">
+              <i class="fas fa-link me-1" aria-hidden="true"></i>Copy Link
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Job Description -->
-      <div class="card mb-4">
+      <div class="card mb-4" data-aos="fade-up" data-aos-delay="100">
         <div class="card-body p-4 p-md-5">
-          <h5 class="fw-semibold mb-4">Job Description</h5>
+          <h2 class="h5 fw-semibold mb-4">Job Description</h2>
           <div class="job-description">
-            {{ job.description | replace('\n', '<br>') | safe }}
+            {{ job.description | safe_nl2br }}
           </div>
 
           {% if job.responsibilities %}
-          <h5 class="fw-semibold mt-5 mb-3">Responsibilities</h5>
+          <h2 class="h5 fw-semibold mt-5 mb-3">Responsibilities</h2>
           <div class="job-description">
-            {{ job.responsibilities | replace('\n', '<br>') | safe }}
+            {{ job.responsibilities | safe_nl2br }}
           </div>
           {% endif %}
 
           {% if job.requirements %}
-          <h5 class="fw-semibold mt-5 mb-3">Requirements</h5>
+          <h2 class="h5 fw-semibold mt-5 mb-3">Requirements</h2>
           <div class="job-description">
-            {{ job.requirements | replace('\n', '<br>') | safe }}
+            {{ job.requirements | safe_nl2br }}
           </div>
           {% endif %}
         </div>
       </div>
 
-      <!-- Related Jobs -->
-      {% if related_jobs %}
-      <div class="card">
+      <!-- Similar Jobs (by skills/location) -->
+      {% if similar_jobs %}
+      <div class="card mb-4" data-aos="fade-up" data-aos-delay="150">
         <div class="card-header">
-          <h6 class="mb-0 fw-semibold">More Jobs from {{ job.company.name }}</h6>
+          <h2 class="h6 mb-0 fw-semibold">
+            <i class="fas fa-fire me-2 text-primary" aria-hidden="true"></i>Similar Jobs You Might Like
+          </h2>
+        </div>
+        <div class="card-body p-0">
+          {% for sj in similar_jobs %}
+          <a href="{{ url_for('jobs.detail', job_id=sj.id) }}"
+             class="list-group-item list-group-item-action px-4 py-3 d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fw-medium">{{ sj.title }}</div>
+              <small class="text-muted">{{ sj.company.name }} &bull; {{ sj.location }}</small>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+              <span class="badge job-type-badge badge-{{ sj.job_type | lower | replace(' ', '') }}">
+                {{ sj.job_type }}
+              </span>
+              <small class="text-muted d-none d-sm-inline">{{ sj.salary_display }}</small>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- More Jobs from Company -->
+      {% if related_jobs %}
+      <div class="card" data-aos="fade-up" data-aos-delay="200">
+        <div class="card-header">
+          <h2 class="h6 mb-0 fw-semibold">More Jobs from {{ job.company.name }}</h2>
         </div>
         <div class="card-body p-0">
           {% for related in related_jobs %}
@@ -126,91 +255,20 @@
     <!-- ===== SIDEBAR ===== -->
     <div class="col-lg-4 job-detail-sidebar">
 
-      <!-- Apply Card -->
-      <div class="card apply-card mb-4 sticky-top" style="top: 80px;">
-        <div class="card-body p-4">
-          <h5 class="fw-semibold mb-4">Apply for this Job</h5>
+      <!-- Apply Card (sticky on desktop only) -->
+      <div class="card apply-card mb-4 d-none d-lg-block" style="position: sticky; top: 80px;">
+        {% include 'jobs/_apply_card.html' %}
+      </div>
 
-          {% if current_user.is_authenticated %}
-            {% if current_user.role == 'user' %}
-              {% if is_expired %}
-                <div class="text-center py-3">
-                  <div class="text-danger mb-2">
-                    <i class="fas fa-calendar-times fa-3x"></i>
-                  </div>
-                  <h6>Application Closed</h6>
-                  <p class="text-muted small">The deadline for this job was {{ job.deadline.strftime('%B %d, %Y') }}.</p>
-                </div>
-              {% elif is_applied %}
-                <div class="text-center py-3">
-                  <div class="text-success mb-2">
-                    <i class="fas fa-check-circle fa-3x"></i>
-                  </div>
-                  <h6>Application Submitted!</h6>
-                  <p class="text-muted small">
-                    Status:
-                    <span class="status-badge status-{{ application.status.lower() }}">
-                      {{ application.status }}
-                    </span>
-                  </p>
-                  <small class="text-muted">Applied {{ application.created_at.strftime('%B %d, %Y') }}</small>
-                </div>
-              {% else %}
-                {% if job.deadline %}
-                <p class="text-muted small mb-3">
-                  <i class="fas fa-calendar me-1 text-warning"></i>
-                  Apply by {{ job.deadline.strftime('%B %d, %Y') }}
-                </p>
-                {% endif %}
-                <form method="POST" action="{{ url_for('jobs.apply', job_id=job.id) }}">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <div class="mb-3">
-                    <label class="form-label fw-medium">Cover Letter <small class="text-muted">(optional)</small></label>
-                    <textarea name="cover_letter" class="form-control" rows="5"
-                              placeholder="Tell the employer why you're a great fit for this role..."></textarea>
-                  </div>
-                  {% if not current_user.resume %}
-                  <div class="alert alert-warning small mb-3">
-                    <i class="fas fa-exclamation-triangle me-1"></i>
-                    No resume uploaded.
-                    <a href="{{ url_for('user.profile') }}" class="alert-link">Upload one</a> to stand out!
-                  </div>
-                  {% endif %}
-                  <button type="submit" class="btn btn-primary btn-lg w-100">
-                    <i class="fas fa-paper-plane me-2"></i>Apply Now
-                  </button>
-                </form>
-              {% endif %}
-            {% elif current_user.role == 'company' %}
-              <div class="text-center text-muted py-3">
-                <i class="fas fa-building fa-2x mb-2"></i>
-                <p class="small">Company accounts cannot apply for jobs.</p>
-              </div>
-            {% elif current_user.role == 'admin' %}
-              <div class="text-center text-muted py-3">
-                <i class="fas fa-shield-alt fa-2x mb-2"></i>
-                <p class="small">Admin viewing mode.</p>
-              </div>
-            {% endif %}
-          {% else %}
-            <div class="text-center">
-              <p class="text-muted mb-3">Sign in to apply for this job</p>
-              <a href="{{ url_for('auth.login', next=request.url) }}"
-                 class="btn btn-primary w-100 mb-2">
-                <i class="fas fa-sign-in-alt me-2"></i>Sign In to Apply
-              </a>
-              <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-primary w-100">
-                Create Free Account
-              </a>
-            </div>
-          {% endif %}
-        </div>
+      <!-- Apply Card (non-sticky on mobile) -->
+      <div class="card apply-card mb-4 d-lg-none">
+        {% include 'jobs/_apply_card.html' %}
       </div>
 
       <!-- Company Info Card -->
-      <div class="card">
+      <div class="card" data-aos="fade-left">
         <div class="card-body p-4">
-          <h6 class="fw-semibold mb-3">About {{ job.company.name }}</h6>
+          <h2 class="h6 fw-semibold mb-3">About {{ job.company.name }}</h2>
           <div class="d-flex align-items-center gap-3 mb-3">
             {% if job.company.logo != 'default_company.png' %}
               <img src="{{ url_for('main.uploaded_file', folder='logos', filename=job.company.logo) }}"
@@ -220,9 +278,14 @@
               <div class="logo-placeholder-sm">{{ job.company.name[0] }}</div>
             {% endif %}
             <div>
-              <div class="fw-semibold">{{ job.company.name }}</div>
+              <div class="fw-semibold">
+                {{ job.company.name }}
+                {% if job.company.is_verified %}
+                  <i class="fas fa-check-circle text-primary ms-1" title="Verified Company" aria-label="Verified Company"></i>
+                {% endif %}
+              </div>
               {% if job.company.industry %}
-                <small class="text-muted">{{ job.company.industry }}</small>
+                <span class="industry-badge mt-1" data-industry="{{ job.company.industry }}"><i class="fas fa-industry" aria-hidden="true"></i>{{ job.company.industry }}</span>
               {% endif %}
             </div>
           </div>
@@ -235,31 +298,31 @@
 
           <ul class="list-unstyled company-details">
             {% if job.company.location %}
-            <li><i class="fas fa-map-marker-alt me-2 text-muted"></i>{{ job.company.location }}</li>
+            <li><i class="fas fa-map-marker-alt me-2 text-muted" aria-hidden="true"></i>{{ job.company.location }}</li>
             {% endif %}
             {% if job.company.size %}
-            <li><i class="fas fa-users me-2 text-muted"></i>{{ job.company.size }} employees</li>
+            <li><i class="fas fa-users me-2 text-muted" aria-hidden="true"></i>{{ job.company.size }} employees</li>
             {% endif %}
             {% if job.company.founded %}
-            <li><i class="fas fa-calendar me-2 text-muted"></i>Founded {{ job.company.founded }}</li>
+            <li><i class="fas fa-calendar me-2 text-muted" aria-hidden="true"></i>Founded {{ job.company.founded }}</li>
             {% endif %}
             {% if job.company.website %}
             <li>
-              <i class="fas fa-globe me-2 text-muted"></i>
-              <a href="{{ job.company.website }}" target="_blank" rel="noopener" class="text-primary">
-                Visit Website
+              <i class="fas fa-globe me-2 text-muted" aria-hidden="true"></i>
+              <a href="{{ job.company.website }}" target="_blank" rel="noopener noreferrer" class="text-primary">
+                Visit Website <i class="fas fa-external-link-alt ms-1 small" aria-hidden="true"></i>
               </a>
             </li>
             {% endif %}
           </ul>
 
           <div class="text-muted small mt-2">
-            <i class="fas fa-briefcase me-1"></i>
+            <i class="fas fa-briefcase me-1" aria-hidden="true"></i>
             {{ job.company.jobs|length }} job{{ 's' if job.company.jobs|length != 1 }} posted
           </div>
           <a href="{{ url_for('main.company_profile', company_id=job.company.id) }}"
              class="btn btn-outline-secondary btn-sm w-100 mt-3">
-            <i class="fas fa-building me-1"></i>View Company Profile
+            <i class="fas fa-building me-1" aria-hidden="true"></i>View Company Profile
           </a>
         </div>
       </div>
@@ -267,4 +330,25 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Copy link button
+const copyBtn = document.getElementById('copyLinkBtn');
+if (copyBtn) {
+  copyBtn.addEventListener('click', function () {
+    const url = this.dataset.url || window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      const orig = this.innerHTML;
+      this.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+      this.classList.replace('btn-outline-secondary', 'btn-success');
+      setTimeout(() => {
+        this.innerHTML = orig;
+        this.classList.replace('btn-success', 'btn-outline-secondary');
+      }, 2000);
+    });
+  });
+}
+</script>
 {% endblock %}

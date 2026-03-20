@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import or_, and_
-from extensions import db
+from extensions import db, limiter
 from models import Job, Company, Application, SavedJob
 
 jobs = Blueprint('jobs', __name__, url_prefix='/jobs')
@@ -97,17 +97,32 @@ def detail(job_id):
         Job.is_active == True
     ).limit(3).all()
 
+    # Similar jobs: same skills or same location (different company)
+    similar_jobs = []
+    if job.skills_required:
+        skills = [s.strip() for s in job.skills_required.split(',') if s.strip()][:3]
+        skill_filters = [Job.skills_required.ilike(f'%{skill}%') for skill in skills]
+        similar_jobs = Job.query.filter(
+            Job.id != job_id,
+            Job.company_id != job.company_id,
+            Job.is_approved == True,
+            Job.is_active == True,
+            or_(*skill_filters, Job.location.ilike(f'%{job.location.split(",")[0].strip()}%'))
+        ).order_by(Job.created_at.desc()).limit(4).all()
+
     return render_template('jobs/detail.html',
                            job=job,
                            is_saved=is_saved,
                            is_applied=is_applied,
                            is_expired=is_expired,
                            application=application,
-                           related_jobs=related_jobs)
+                           related_jobs=related_jobs,
+                           similar_jobs=similar_jobs)
 
 
 @jobs.route('/<int:job_id>/apply', methods=['POST'])
 @login_required
+@limiter.limit("20 per hour")
 def apply(job_id):
     if current_user.role != 'user':
         flash('Only job seekers can apply for jobs.', 'warning')

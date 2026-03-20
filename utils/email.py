@@ -313,6 +313,38 @@ def send_job_alert_email(to_email: str, user_name: str, jobs: list, alerts_url: 
     return _send("New Jobs Matching Your Alerts — JobFinder", [to_email], html, text)
 
 
+def send_email_verification(to_email: str, name: str, verify_url: str) -> bool:
+    greeting = f"Hi {name}," if name else "Hello,"
+    html = f"""
+    <div style="font-family:Inter,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f8fafc;border-radius:12px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h2 style="color:#2563eb;margin:0;">&#9989; Verify Your Email</h2>
+      </div>
+      <p style="color:#374151;">{greeting}</p>
+      <p style="color:#374151;">
+        Thanks for signing up for <strong>JobFinder</strong>!
+        Click the button below to verify your email address and activate your account.
+      </p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="{verify_url}"
+           style="background:#2563eb;color:white;text-decoration:none;padding:14px 32px;
+                  border-radius:8px;font-weight:600;font-size:1rem;display:inline-block;">
+          Verify Email Address
+        </a>
+      </div>
+      <p style="color:#6b7280;font-size:0.875rem;">
+        If you did not create an account, you can safely ignore this email.
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+      <p style="color:#9ca3af;font-size:0.75rem;text-align:center;">
+        JobFinder &mdash; Find Your Dream Job
+      </p>
+    </div>
+    """
+    text = f"{greeting}\n\nVerify your JobFinder email: {verify_url}"
+    return _send("Verify your JobFinder email address", [to_email], html, text)
+
+
 def send_interview_scheduled(seeker_email: str, seeker_name: str, job_title: str,
                                company_name: str, scheduled_at: str, interview_type: str,
                                location_or_link: str, notes: str) -> bool:

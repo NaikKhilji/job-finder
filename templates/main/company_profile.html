@@ -17,7 +17,7 @@
         </nav>
         <h2 class="mb-1 fw-bold">{{ company.name }}</h2>
         <p class="text-muted mb-0">
-          {% if company.industry %}<span class="me-3"><i class="fas fa-industry me-1"></i>{{ company.industry }}</span>{% endif %}
+          {% if company.industry %}<span class="industry-badge me-3" data-industry="{{ company.industry }}"><i class="fas fa-industry" aria-hidden="true"></i>{{ company.industry }}</span>{% endif %}
           {% if company.location %}<span class="me-3"><i class="fas fa-map-marker-alt me-1"></i>{{ company.location }}</span>{% endif %}
           <span><i class="fas fa-briefcase me-1"></i>{{ jobs|length }} open position{{ 's' if jobs|length != 1 }}</span>
         </p>
@@ -57,7 +57,7 @@
             {% endif %}
             <h5 class="fw-bold mt-3 mb-0">{{ company.name }}</h5>
             {% if company.industry %}
-              <p class="text-muted small mb-0">{{ company.industry }}</p>
+              <span class="industry-badge mt-1" data-industry="{{ company.industry }}"><i class="fas fa-industry" aria-hidden="true"></i>{{ company.industry }}</span>
             {% endif %}
           </div>
 

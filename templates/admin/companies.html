@@ -53,8 +53,17 @@
             <div class="logo-placeholder-sm">{{ comp.name[0] }}</div>
           {% endif %}
           <div>
-            <h6 class="mb-0 fw-semibold">{{ comp.name }}</h6>
-            <small class="text-muted">{{ comp.industry or 'No industry' }}</small>
+            <h6 class="mb-0 fw-semibold">
+              {{ comp.name }}
+              {% if comp.is_verified %}
+                <i class="fas fa-check-circle text-primary ms-1" title="Verified" aria-label="Verified company"></i>
+              {% endif %}
+            </h6>
+            {% if comp.industry %}
+              <span class="industry-badge" data-industry="{{ comp.industry }}">{{ comp.industry }}</span>
+            {% else %}
+              <small class="text-muted">No industry</small>
+            {% endif %}
           </div>
         </div>
         <div class="text-muted small mb-2">
@@ -66,16 +75,27 @@
         <div class="text-muted small mb-3">
           <i class="fas fa-user me-1"></i>{{ comp.owner.name }} ({{ comp.owner.email }})
         </div>
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <small class="text-muted">{{ comp.created_at.strftime('%b %d, %Y') }}</small>
-          <form method="POST" action="{{ url_for('admin.delete_company', company_id=comp.id) }}"
-                class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-xs btn-outline-danger"
-                    onclick="return confirm('Delete {{ comp.name }}? This will also delete all their jobs.')">
-              <i class="fas fa-trash me-1"></i>Delete
-            </button>
-          </form>
+          <div class="d-flex gap-1">
+            <form method="POST" action="{{ url_for('admin.verify_company', company_id=comp.id) }}"
+                  class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-xs {{ 'btn-primary' if not comp.is_verified else 'btn-outline-primary' }}"
+                      title="{{ 'Verify company' if not comp.is_verified else 'Remove verification' }}">
+                <i class="fas fa-{{ 'check' if not comp.is_verified else 'times' }} me-1"></i>
+                {{ 'Verify' if not comp.is_verified else 'Unverify' }}
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.delete_company', company_id=comp.id) }}"
+                  class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-xs btn-outline-danger"
+                      onclick="return confirm('Delete {{ comp.name }}? This will also delete all their jobs.')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

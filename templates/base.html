@@ -5,25 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}JobFinder — Find Your Dream Job{% endblock %}</title>
 
+  <!-- Primary Meta Tags -->
+  <meta name="description" content="{% block meta_description %}Find your dream job on JobFinder. Browse thousands of job listings, apply to top companies, and advance your career today.{% endblock %}">
+  <meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}">
+  {% block canonical_url %}<link rel="canonical" href="{{ request.url }}">{% endblock %}
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:title" content="{% block og_title %}JobFinder — Find Your Dream Job{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Find your dream job on JobFinder. Browse thousands of job listings, apply to top companies, and advance your career today.{% endblock %}">
+  <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/og-default.png', _external=True) }}{% endblock %}">
+  <meta property="og:site_name" content="JobFinder">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block twitter_title %}JobFinder — Find Your Dream Job{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}Find your dream job on JobFinder.{% endblock %}">
+  <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/og-default.png', _external=True) }}{% endblock %}">
+
+  <!-- DNS Prefetch for external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- AOS (Animate On Scroll) -->
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
   <!-- Custom CSS -->
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
   {% block extra_css %}{% endblock %}
+
+  <!-- Structured Data: Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "JobFinder",
+    "url": "{{ request.host_url }}",
+    "description": "JobFinder connects talented professionals with amazing companies.",
+    "logo": "{{ url_for('static', filename='images/og-default.png', _external=True) }}"
+  }
+  </script>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 
+<!-- ===== SKIP TO CONTENT (accessibility) ===== -->
+<a href="#main-content" class="skip-to-content">Skip to main content</a>
+
 {% block navbar %}
 <!-- ===== NAVBAR ===== -->
-<nav class="navbar navbar-expand-lg navbar-main sticky-top" id="mainNav">
+<nav class="navbar navbar-expand-lg navbar-main sticky-top" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
     <!-- Brand -->
-    <a class="navbar-brand" href="{{ url_for('main.index') }}">
-      <i class="fas fa-briefcase me-2"></i>JobFinder
+    <a class="navbar-brand" href="{{ url_for('main.index') }}" aria-label="JobFinder home">
+      <i class="fas fa-briefcase me-2" aria-hidden="true"></i>JobFinder
     </a>
 
     <!-- Mobile Toggle -->
@@ -38,19 +80,20 @@
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}"
-             href="{{ url_for('main.index') }}">Home</a>
+             href="{{ url_for('main.index') }}" {% if request.endpoint == 'main.index' %}aria-current="page"{% endif %}>Home</a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if request.blueprint == 'jobs' %}active{% endif %}"
-             href="{{ url_for('jobs.listing') }}">Browse Jobs</a>
+             href="{{ url_for('jobs.listing') }}" {% if request.blueprint == 'jobs' %}aria-current="page"{% endif %}>Browse Jobs</a>
         </li>
       </ul>
 
       <ul class="navbar-nav ms-auto align-items-center gap-2">
         <!-- Dark mode toggle -->
         <li class="nav-item">
-          <button class="btn btn-icon theme-toggle" id="themeToggle" title="Toggle dark mode">
-            <i class="fas fa-moon" id="themeIcon"></i>
+          <button class="btn btn-icon theme-toggle" id="themeToggle"
+                  aria-label="Toggle dark mode" title="Toggle dark mode">
+            <i class="fas fa-moon" id="themeIcon" aria-hidden="true"></i>
           </button>
         </li>
 
@@ -59,15 +102,15 @@
           <li class="nav-item">
             {% if current_user.role == 'admin' %}
               <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                <i class="fas fa-gauge-high me-1"></i>Dashboard
+                <i class="fas fa-gauge-high me-1" aria-hidden="true"></i>Dashboard
               </a>
             {% elif current_user.role == 'company' %}
               <a class="nav-link" href="{{ url_for('company.dashboard') }}">
-                <i class="fas fa-gauge-high me-1"></i>Dashboard
+                <i class="fas fa-gauge-high me-1" aria-hidden="true"></i>Dashboard
               </a>
             {% else %}
               <a class="nav-link" href="{{ url_for('user.dashboard') }}">
-                <i class="fas fa-gauge-high me-1"></i>Dashboard
+                <i class="fas fa-gauge-high me-1" aria-hidden="true"></i>Dashboard
               </a>
             {% endif %}
           </li>
@@ -76,33 +119,45 @@
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
                href="#" id="userDropdown" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
+               data-bs-toggle="dropdown" aria-expanded="false"
+               aria-haspopup="true" aria-label="User menu">
               <img src="{{ url_for('main.uploaded_file', folder='avatars', filename=current_user.profile_picture) if current_user.profile_picture != 'default_avatar.png' else url_for('static', filename='images/default_avatar.png') }}"
-                   class="avatar-sm" alt="{{ current_user.name }}">
+                   class="avatar-sm" alt="{{ current_user.name }}'s avatar">
               <span class="d-none d-md-inline">{{ current_user.name }}</span>
+              {% if not current_user.is_email_verified %}
+                <span class="badge bg-warning text-dark ms-1" title="Email not verified"
+                      aria-label="Email not verified">!</span>
+              {% endif %}
             </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="userDropdown">
               <li><h6 class="dropdown-header">{{ current_user.email }}</h6></li>
+              {% if not current_user.is_email_verified %}
+              <li>
+                <a class="dropdown-item text-warning small" href="{{ url_for('auth.resend_verification') }}">
+                  <i class="fas fa-envelope me-2" aria-hidden="true"></i>Verify Email
+                </a>
+              </li>
+              {% endif %}
               <li><hr class="dropdown-divider"></li>
               {% if current_user.role == 'user' %}
                 <li><a class="dropdown-item" href="{{ url_for('user.profile') }}">
-                  <i class="fas fa-user me-2"></i>My Profile</a></li>
+                  <i class="fas fa-user me-2" aria-hidden="true"></i>My Profile</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('user.applied_jobs') }}">
-                  <i class="fas fa-file-alt me-2"></i>Applied Jobs</a></li>
+                  <i class="fas fa-file-alt me-2" aria-hidden="true"></i>Applied Jobs</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('user.saved_jobs') }}">
-                  <i class="fas fa-bookmark me-2"></i>Saved Jobs</a></li>
+                  <i class="fas fa-bookmark me-2" aria-hidden="true"></i>Saved Jobs</a></li>
               {% elif current_user.role == 'company' %}
                 <li><a class="dropdown-item" href="{{ url_for('company.profile') }}">
-                  <i class="fas fa-building me-2"></i>Company Profile</a></li>
+                  <i class="fas fa-building me-2" aria-hidden="true"></i>Company Profile</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('company.post_job') }}">
-                  <i class="fas fa-plus me-2"></i>Post a Job</a></li>
+                  <i class="fas fa-plus me-2" aria-hidden="true"></i>Post a Job</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('company.my_jobs') }}">
-                  <i class="fas fa-list me-2"></i>My Jobs</a></li>
+                  <i class="fas fa-list me-2" aria-hidden="true"></i>My Jobs</a></li>
               {% endif %}
               <li><hr class="dropdown-divider"></li>
               <li>
                 <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
-                  <i class="fas fa-sign-out-alt me-2"></i>Logout
+                  <i class="fas fa-sign-out-alt me-2" aria-hidden="true"></i>Logout
                 </a>
               </li>
             </ul>
@@ -124,17 +179,18 @@
 <!-- ===== FLASH MESSAGES ===== -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999; margin-top: 70px">
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999; margin-top: 70px"
+         aria-live="polite" aria-atomic="false">
       {% for category, message in messages %}
         <div class="toast align-items-center text-bg-{{ 'danger' if category == 'error' else category }} border-0 show"
              role="alert" aria-live="assertive" aria-atomic="true">
           <div class="d-flex">
             <div class="toast-body">
-              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' or category == 'error' %}fa-exclamation-circle{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-info-circle{% endif %} me-2"></i>
+              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' or category == 'error' %}fa-exclamation-circle{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-info-circle{% endif %} me-2" aria-hidden="true"></i>
               {{ message }}
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                    data-bs-dismiss="toast" aria-label="Close"></button>
+                    data-bs-dismiss="toast" aria-label="Close notification"></button>
           </div>
         </div>
       {% endfor %}
@@ -142,35 +198,38 @@
   {% endif %}
 {% endwith %}
 
+<!-- Screen reader announcements -->
+<div id="sr-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
 <!-- ===== MAIN CONTENT ===== -->
-<main>
+<main id="main-content">
   {% block content %}{% endblock %}
 </main>
 
 <!-- ===== FOOTER ===== -->
 {% block footer %}
-<footer class="footer mt-auto">
+<footer class="footer mt-auto" role="contentinfo">
   <div class="container">
     <div class="row g-4">
 
       <!-- Brand + stats + social -->
       <div class="col-lg-4 col-md-6">
-        <a class="footer-brand" href="{{ url_for('main.index') }}">
-          <i class="fas fa-briefcase me-2"></i>JobFinder
+        <a class="footer-brand" href="{{ url_for('main.index') }}" aria-label="JobFinder home">
+          <i class="fas fa-briefcase me-2" aria-hidden="true"></i>JobFinder
         </a>
         <p class="text-muted mt-3 mb-3">
           Connecting talented professionals with amazing companies.<br>
           Find your dream job today.
         </p>
         <div class="d-flex gap-3 text-muted small mb-3">
-          <span><i class="fas fa-briefcase me-1 text-primary"></i><strong>{{ footer_job_count }}</strong> live jobs</span>
-          <span><i class="fas fa-building me-1 text-primary"></i><strong>{{ footer_company_count }}</strong> companies</span>
+          <span><i class="fas fa-briefcase me-1 text-primary" aria-hidden="true"></i><strong>{{ footer_job_count }}</strong> live jobs</span>
+          <span><i class="fas fa-building me-1 text-primary" aria-hidden="true"></i><strong>{{ footer_company_count }}</strong> companies</span>
         </div>
-        <div class="social-links">
-          <a href="{{ config.get('SOCIAL_TWITTER', '#') }}" class="social-link" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-          <a href="{{ config.get('SOCIAL_LINKEDIN', '#') }}" class="social-link" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
-          <a href="{{ config.get('SOCIAL_GITHUB', '#') }}" class="social-link" aria-label="GitHub"><i class="fab fa-github"></i></a>
-          <a href="{{ config.get('SOCIAL_FACEBOOK', '#') }}" class="social-link" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+        <div class="social-links" role="list" aria-label="Social media links">
+          <a href="{{ config.get('SOCIAL_TWITTER', '#') }}" class="social-link" aria-label="JobFinder on Twitter" role="listitem"><i class="fab fa-twitter" aria-hidden="true"></i></a>
+          <a href="{{ config.get('SOCIAL_LINKEDIN', '#') }}" class="social-link" aria-label="JobFinder on LinkedIn" role="listitem"><i class="fab fa-linkedin" aria-hidden="true"></i></a>
+          <a href="{{ config.get('SOCIAL_GITHUB', '#') }}" class="social-link" aria-label="JobFinder on GitHub" role="listitem"><i class="fab fa-github" aria-hidden="true"></i></a>
+          <a href="{{ config.get('SOCIAL_FACEBOOK', '#') }}" class="social-link" aria-label="JobFinder on Facebook" role="listitem"><i class="fab fa-facebook" aria-hidden="true"></i></a>
         </div>
       </div>
 
@@ -213,11 +272,13 @@
       <div class="col-lg-4 col-md-6">
         <h6 class="footer-heading">Stay Updated</h6>
         <p class="text-muted small">Get the latest job listings delivered to your inbox.</p>
-        <form class="newsletter-form mb-3" method="POST" action="{{ url_for('main.newsletter') }}">
+        <form class="newsletter-form mb-3" method="POST" action="{{ url_for('main.newsletter') }}"
+              aria-label="Newsletter subscription">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="input-group">
-            <input type="email" name="email" class="form-control"
-                   placeholder="Your email address" required>
+            <label for="footer-newsletter-email" class="visually-hidden">Your email address</label>
+            <input type="email" id="footer-newsletter-email" name="email" class="form-control"
+                   placeholder="Your email address" required autocomplete="email">
             <button class="btn btn-primary" type="submit">Subscribe</button>
           </div>
         </form>
@@ -247,6 +308,9 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- AOS -->
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, once: true, offset: 60 });</script>
 <!-- Custom JS -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block extra_js %}{% endblock %}

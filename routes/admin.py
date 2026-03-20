@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from extensions import db
@@ -30,6 +31,22 @@ def dashboard():
     recent_jobs = Job.query.order_by(Job.created_at.desc()).limit(5).all()
     recent_apps = Application.query.order_by(Application.created_at.desc()).limit(5).all()
 
+    # Analytics: last 7 days signups and applications
+    labels = []
+    signup_data = []
+    app_data = []
+    for i in range(6, -1, -1):
+        day = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=i)
+        next_day = day + timedelta(days=1)
+        labels.append(day.strftime('%b %d'))
+        signup_data.append(User.query.filter(User.created_at >= day, User.created_at < next_day).count())
+        app_data.append(Application.query.filter(Application.created_at >= day, Application.created_at < next_day).count())
+
+    # Application status breakdown
+    status_pending  = Application.query.filter_by(status='Pending').count()
+    status_accepted = Application.query.filter_by(status='Accepted').count()
+    status_rejected = Application.query.filter_by(status='Rejected').count()
+
     return render_template('admin/dashboard.html',
                            total_users=total_users,
                            total_companies=total_companies,
@@ -38,7 +55,13 @@ def dashboard():
                            pending_jobs=pending_jobs,
                            recent_users=recent_users,
                            recent_jobs=recent_jobs,
-                           recent_apps=recent_apps)
+                           recent_apps=recent_apps,
+                           chart_labels=labels,
+                           chart_signups=signup_data,
+                           chart_apps=app_data,
+                           status_pending=status_pending,
+                           status_accepted=status_accepted,
+                           status_rejected=status_rejected)
 
 
 @admin.route('/users')
@@ -107,6 +130,16 @@ def companies():
                            companies=pagination.items,
                            pagination=pagination,
                            search=search)
+
+
+@admin.route('/companies/<int:company_id>/verify', methods=['POST'])
+def verify_company(company_id):
+    comp = Company.query.get_or_404(company_id)
+    comp.is_verified = not comp.is_verified
+    db.session.commit()
+    status = 'verified' if comp.is_verified else 'unverified'
+    flash(f'Company "{comp.name}" has been {status}.', 'success')
+    return redirect(url_for('admin.companies'))
 
 
 @admin.route('/companies/<int:company_id>/delete', methods=['POST'])

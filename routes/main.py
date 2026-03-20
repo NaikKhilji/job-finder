@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Blueprint, render_template, send_from_directory, current_app, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, send_from_directory, current_app, abort, request, flash, redirect, url_for, Response
 from models import Job, Company, NewsletterSubscriber
 from extensions import db
 
@@ -115,6 +115,76 @@ def company_profile(company_id):
     ).order_by(Job.created_at.desc()).all()
 
     return render_template('main/company_profile.html', company=comp, jobs=active_jobs)
+
+
+@main.route('/robots.txt')
+def robots():
+    lines = [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /admin/',
+        'Disallow: /auth/',
+        'Disallow: /user/',
+        'Disallow: /company/',
+        f'Sitemap: {request.host_url}sitemap.xml',
+    ]
+    return Response('\n'.join(lines), mimetype='text/plain')
+
+
+@main.route('/sitemap.xml')
+def sitemap():
+    now = datetime.utcnow().strftime('%Y-%m-%d')
+    urls = []
+
+    # Static pages
+    static_pages = [
+        ('main.index', 'daily', '1.0'),
+        ('jobs.listing', 'daily', '0.9'),
+        ('main.contact', 'monthly', '0.5'),
+        ('main.terms', 'monthly', '0.3'),
+        ('main.privacy', 'monthly', '0.3'),
+    ]
+    for endpoint, freq, priority in static_pages:
+        try:
+            loc = url_for(endpoint, _external=True)
+            urls.append(f'''  <url>
+    <loc>{loc}</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>{freq}</changefreq>
+    <priority>{priority}</priority>
+  </url>''')
+        except Exception:
+            pass
+
+    # Job detail pages
+    jobs = Job.query.filter_by(is_approved=True, is_active=True).all()
+    for job in jobs:
+        loc = url_for('jobs.detail', job_id=job.id, _external=True)
+        lastmod = job.created_at.strftime('%Y-%m-%d')
+        urls.append(f'''  <url>
+    <loc>{loc}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>''')
+
+    # Company profile pages
+    companies = Company.query.all()
+    for comp in companies:
+        loc = url_for('main.company_profile', company_id=comp.id, _external=True)
+        lastmod = comp.created_at.strftime('%Y-%m-%d')
+        urls.append(f'''  <url>
+    <loc>{loc}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>''')
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    xml += '\n'.join(urls)
+    xml += '\n</urlset>'
+    return Response(xml, mimetype='application/xml')
 
 
 @main.app_errorhandler(404)

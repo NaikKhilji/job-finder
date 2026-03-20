@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from flask import Flask
 from config import Config
-from extensions import db, login_manager, csrf, mail
+from extensions import db, login_manager, csrf, mail, limiter
 
 
 def create_app(config_class=Config):
@@ -14,6 +14,7 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     csrf.init_app(app)
     mail.init_app(app)
+    limiter.init_app(app)
 
     # User loader
     from models import User
@@ -33,6 +34,18 @@ def create_app(config_class=Config):
             'footer_company_count': Company.query.count(),
         }
 
+    # ── Custom Jinja2 filters ────────────────────────────────────────────────
+    import bleach
+    from markupsafe import Markup
+
+    @app.template_filter('safe_nl2br')
+    def safe_nl2br(text):
+        """Sanitize HTML then convert newlines to <br> tags safely."""
+        if not text:
+            return ''
+        clean = bleach.clean(text, tags=[], strip=True)
+        return Markup(clean.replace('\n', '<br>'))
+
     # Register blueprints
     from routes.main import main
     from routes.auth import auth
@@ -49,8 +62,10 @@ def create_app(config_class=Config):
     app.register_blueprint(jobs)
 
     # ── Social Auth (Google + LinkedIn via Flask-Dance) ─────────────────────
-    # oauthlib reads this from os.environ directly (not Flask config)
-    os.environ.setdefault('OAUTHLIB_INSECURE_TRANSPORT', '1')
+    # OAUTHLIB_INSECURE_TRANSPORT must be in os.environ BEFORE blueprints are
+    # registered (Flask-Dance reads it at request time, but set it early anyway).
+    if os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1':
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
     os.environ.setdefault('OAUTHLIB_RELAX_TOKEN_SCOPE', '1')
 
     google_client_id = app.config.get('GOOGLE_OAUTH_CLIENT_ID')
@@ -94,6 +109,9 @@ def create_app(config_class=Config):
         _migrate_db()
         seed_admin()
 
+    # ── Background scheduler (job expiry, digest emails) ────────────────────
+    _start_scheduler(app)
+
     return app
 
 
@@ -102,15 +120,20 @@ def _migrate_db():
     import sqlalchemy as sa
 
     users_columns = [
-        ('reset_token',        'VARCHAR(255)'),
-        ('reset_token_expiry', 'DATETIME'),
-        ('otp',                'VARCHAR(6)'),
-        ('otp_expiry',         'DATETIME'),
-        ('google_id',          'VARCHAR(255)'),
-        ('linkedin_id',        'VARCHAR(255)'),
+        ('reset_token',          'VARCHAR(255)'),
+        ('reset_token_expiry',   'DATETIME'),
+        ('otp',                  'VARCHAR(6)'),
+        ('otp_expiry',           'DATETIME'),
+        ('google_id',            'VARCHAR(255)'),
+        ('linkedin_id',          'VARCHAR(255)'),
+        ('is_email_verified',    'BOOLEAN DEFAULT 0'),
+        ('email_verify_token',   'VARCHAR(255)'),
     ]
     jobs_columns = [
-        ('deadline',           'DATETIME'),
+        ('deadline',             'DATETIME'),
+    ]
+    companies_columns = [
+        ('is_verified',          'BOOLEAN DEFAULT 0'),
     ]
 
     with db.engine.connect() as conn:
@@ -124,6 +147,11 @@ def _migrate_db():
             if col_name not in existing_jobs:
                 conn.execute(sa.text(f'ALTER TABLE jobs ADD COLUMN {col_name} {col_type}'))
 
+        existing_companies = [row[1] for row in conn.execute(sa.text("PRAGMA table_info(companies)"))]
+        for col_name, col_type in companies_columns:
+            if col_name not in existing_companies:
+                conn.execute(sa.text(f'ALTER TABLE companies ADD COLUMN {col_name} {col_type}'))
+
         conn.commit()
 
 
@@ -132,20 +160,54 @@ def seed_admin():
     from werkzeug.security import generate_password_hash
     from extensions import db
 
-    admin = User.query.filter_by(email='admin@jobfinder.com').first()
-    if not admin:
-        admin = User(
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@jobfinder.com')
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'ChangeMe@2024!')
+
+    admin_user = User.query.filter_by(email=admin_email).first()
+    if not admin_user:
+        admin_user = User(
             name='Admin',
-            email='admin@jobfinder.com',
-            password_hash=generate_password_hash('admin123'),
-            role='admin'
+            email=admin_email,
+            password_hash=generate_password_hash(admin_password),
+            role='admin',
+            is_email_verified=True,
         )
-        db.session.add(admin)
+        db.session.add(admin_user)
         db.session.commit()
-        print('Admin user created: admin@jobfinder.com / admin123')
+        print(f'Admin user created: {admin_email}')
+
+
+def _start_scheduler(app):
+    """Start APScheduler for background jobs."""
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        scheduler = BackgroundScheduler(daemon=True)
+
+        def expire_jobs():
+            """Auto-deactivate jobs past their deadline."""
+            with app.app_context():
+                from models import Job
+                now = datetime.utcnow()
+                expired = Job.query.filter(
+                    Job.deadline != None,
+                    Job.deadline < now,
+                    Job.is_active == True,
+                ).all()
+                for job in expired:
+                    job.is_active = False
+                if expired:
+                    db.session.commit()
+                    app.logger.info(f'[Scheduler] Expired {len(expired)} job(s).')
+
+        scheduler.add_job(expire_jobs, 'interval', hours=1, id='expire_jobs',
+                          replace_existing=True)
+        scheduler.start()
+    except Exception as e:
+        app.logger.warning(f'[Scheduler] Could not start: {e}')
 
 
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

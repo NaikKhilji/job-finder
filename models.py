@@ -26,6 +26,8 @@ class User(UserMixin, db.Model):
     otp_expiry = db.Column(db.DateTime, nullable=True)
     google_id = db.Column(db.String(255), nullable=True)
     linkedin_id = db.Column(db.String(255), nullable=True)
+    is_email_verified = db.Column(db.Boolean, default=False)
+    email_verify_token = db.Column(db.String(255), nullable=True)
 
     # Relationships
     company = db.relationship('Company', backref='owner', uselist=False, lazy=True)
@@ -51,6 +53,7 @@ class Company(db.Model):
     founded = db.Column(db.String(10), default='')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     is_approved = db.Column(db.Boolean, default=True)
+    is_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships

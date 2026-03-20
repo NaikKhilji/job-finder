@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ===== AUTO-DISMISS TOASTS =====
   const toasts = document.querySelectorAll('.toast');
   toasts.forEach(function (toastEl) {
-    const toast = new bootstrap.Toast(toastEl, { delay: 4000, autohide: true });
+    const toast = new bootstrap.Toast(toastEl, { delay: 5000, autohide: true });
     toast.show();
   });
 
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const themeIcon = document.getElementById('themeIcon');
   const html = document.documentElement;
 
-  // Load saved theme
   const savedTheme = localStorage.getItem('theme') || 'light';
   html.setAttribute('data-theme', savedTheme);
   updateThemeIcon(savedTheme);
@@ -28,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
       html.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
       updateThemeIcon(next);
+      announce(next === 'dark' ? 'Dark mode enabled' : 'Light mode enabled');
     });
   }
 
@@ -47,27 +47,34 @@ document.addEventListener('DOMContentLoaded', function () {
     sidebar && sidebar.classList.add('open');
     overlay && overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    sidebarClose && sidebarClose.focus();
   }
 
   function closeSidebar() {
     sidebar && sidebar.classList.remove('open');
     overlay && overlay.classList.remove('open');
     document.body.style.overflow = '';
+    sidebarToggle && sidebarToggle.focus();
   }
 
   sidebarToggle && sidebarToggle.addEventListener('click', openSidebar);
   sidebarClose && sidebarClose.addEventListener('click', closeSidebar);
   overlay && overlay.addEventListener('click', closeSidebar);
 
+  // Keyboard: close sidebar on Escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sidebar && sidebar.classList.contains('open')) {
+      closeSidebar();
+    }
+  });
+
   // ===== NAVBAR SCROLL EFFECT =====
   const navbar = document.getElementById('mainNav');
   if (navbar) {
     window.addEventListener('scroll', function () {
-      if (window.scrollY > 20) {
-        navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
-      } else {
-        navbar.style.boxShadow = 'none';
-      }
+      navbar.style.boxShadow = window.scrollY > 20
+        ? '0 4px 20px rgba(0,0,0,0.08)'
+        : 'none';
     }, { passive: true });
   }
 
@@ -79,9 +86,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (input.type === 'password') {
       input.type = 'text';
       icon && (icon.className = 'fas fa-eye-slash');
+      btn.setAttribute('aria-label', 'Hide password');
     } else {
       input.type = 'password';
       icon && (icon.className = 'fas fa-eye');
+      btn.setAttribute('aria-label', 'Show password');
     }
   };
 
@@ -136,11 +145,12 @@ document.addEventListener('DOMContentLoaded', function () {
       if (btn && !btn.disabled) {
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
-        // Re-enable after 10 seconds as fallback
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+        btn.setAttribute('aria-busy', 'true');
         setTimeout(function () {
           btn.disabled = false;
           btn.innerHTML = originalText;
+          btn.removeAttribute('aria-busy');
         }, 10000);
       }
     });
@@ -148,24 +158,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ===== NUMBER COUNTER ANIMATION =====
   const statNumbers = document.querySelectorAll('.stat-number, .stat-card-number');
-  const observerOptions = { threshold: 0.5 };
-
   const counterObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
         const el = entry.target;
         const target = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
-        if (target > 0) {
-          animateCounter(el, target);
-        }
+        if (target > 0) animateCounter(el, target);
         counterObserver.unobserve(el);
       }
     });
-  }, observerOptions);
+  }, { threshold: 0.5 });
 
-  statNumbers.forEach(function (el) {
-    counterObserver.observe(el);
-  });
+  statNumbers.forEach(function (el) { counterObserver.observe(el); });
 
   function animateCounter(el, target) {
     const duration = 1000;
@@ -176,8 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const elapsed = currentTime - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.floor(eased * target);
-      el.textContent = current.toLocaleString() + suffix;
+      el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
       if (progress < 1) requestAnimationFrame(update);
     }
 
@@ -205,6 +208,63 @@ document.addEventListener('DOMContentLoaded', function () {
     if (link.getAttribute('href') === currentPath) {
       link.classList.add('active');
     }
+  });
+
+  // ===== SEARCH DEBOUNCE (jobs listing) =====
+  const searchInput = document.querySelector('.jobs-page input[name="search"]');
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function () {
+        const form = searchInput.closest('form');
+        if (form && searchInput.value.length >= 2) {
+          form.submit();
+        }
+      }, 600);
+    });
+  }
+
+  // ===== ACTIVE FILTER COUNT BADGE =====
+  const filterToggleBtn = document.querySelector('.filter-toggle-btn');
+  if (filterToggleBtn) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterKeys = ['job_type', 'location', 'experience', 'salary_min', 'salary_max'];
+    const activeCount = filterKeys.filter(k => urlParams.get(k) && urlParams.get(k) !== '0').length;
+
+    if (activeCount > 0) {
+      const existingBadge = filterToggleBtn.querySelector('.badge');
+      if (existingBadge) {
+        existingBadge.textContent = activeCount;
+        existingBadge.className = 'badge bg-primary ms-auto filter-count-badge';
+      } else {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary ms-auto filter-count-badge';
+        badge.textContent = activeCount;
+        badge.setAttribute('aria-label', activeCount + ' active filters');
+        filterToggleBtn.appendChild(badge);
+      }
+    }
+  }
+
+  // ===== SCREEN READER ANNOUNCER =====
+  function announce(message) {
+    const announcer = document.getElementById('sr-announcer');
+    if (announcer) {
+      announcer.textContent = '';
+      setTimeout(() => { announcer.textContent = message; }, 100);
+    }
+  }
+  window.srAnnounce = announce;
+
+  // ===== MODAL FOCUS TRAP =====
+  document.querySelectorAll('.modal').forEach(function (modal) {
+    modal.addEventListener('shown.bs.modal', function () {
+      const focusable = modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length) focusable[0].focus();
+    });
   });
 
 });

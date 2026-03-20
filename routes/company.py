@@ -1,6 +1,8 @@
 import os
+import csv
+import io
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, Response
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from extensions import db
@@ -128,6 +130,19 @@ def post_job():
             errors.append('Location is required.')
         if not job_type:
             errors.append('Job type is required.')
+
+        # Duplicate job detection
+        duplicate = Job.query.filter(
+            Job.company_id == comp.id,
+            Job.title.ilike(title),
+            Job.is_active == True,
+        ).first()
+        if duplicate:
+            flash(
+                f'You already have an active job posting titled "{duplicate.title}". '
+                'Please edit the existing one or choose a different title.',
+                'warning'
+            )
 
         if errors:
             for e in errors:
@@ -353,6 +368,34 @@ def schedule_interview(app_id):
 
     flash(f'Interview scheduled for {scheduled_at.strftime("%b %d, %Y at %I:%M %p")}!', 'success')
     return redirect(url_for('company.applicants', job_id=application.job_id))
+
+
+@company.route('/jobs/<int:job_id>/applicants/export')
+def export_applicants_csv(job_id):
+    """Export applicants for a job as CSV."""
+    comp = current_user.company
+    job = Job.query.filter_by(id=job_id, company_id=comp.id).first_or_404()
+    apps = Application.query.filter_by(job_id=job_id).order_by(Application.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Applicant Name', 'Email', 'Status', 'Applied On', 'Cover Letter'])
+    for app in apps:
+        writer.writerow([
+            app.applicant.name,
+            app.applicant.email,
+            app.status,
+            app.created_at.strftime('%Y-%m-%d %H:%M'),
+            app.cover_letter.replace('\n', ' ') if app.cover_letter else '',
+        ])
+
+    output.seek(0)
+    filename = f"applicants_{job.title.replace(' ', '_')}_{datetime.utcnow().strftime('%Y%m%d')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
 
 
 @company.route('/interviews/<int:interview_id>/update', methods=['POST'])

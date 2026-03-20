@@ -2299,3 +2299,348 @@ body {
 @media (max-width: 767px) {
   .jobs-header .row { row-gap: .75rem; }
 }
+
+/* ===================================================
+   ADDITIONS: Dark mode forms, Accessibility, Share, Breadcrumb
+   =================================================== */
+
+/* ── Skip to content (accessibility) ── */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  z-index: 99999;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* ── Dark mode: form inputs, selects, textareas ── */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] textarea.form-control {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] textarea.form-control:focus {
+  background-color: #1e293b;
+  border-color: var(--primary);
+  color: #f1f5f9;
+  box-shadow: 0 0 0 0.2rem rgba(37,99,235,0.25);
+}
+
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] textarea.form-control::placeholder {
+  color: #64748b;
+}
+
+[data-theme="dark"] .input-group-text {
+  background-color: #334155;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .form-check-input {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .form-check-input:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .form-text {
+  color: #64748b;
+}
+
+/* ── Dark mode: cards, badges, alerts ── */
+[data-theme="dark"] .alert {
+  border-color: #334155;
+}
+
+[data-theme="dark"] .alert-warning {
+  background-color: #422006;
+  border-color: #78350f;
+  color: #fde68a;
+}
+
+[data-theme="dark"] .alert-info {
+  background-color: #0c2a35;
+  border-color: #164e63;
+  color: #a5f3fc;
+}
+
+[data-theme="dark"] .list-group-item {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .list-group-item-action:hover,
+[data-theme="dark"] .list-group-item-action:focus {
+  background-color: #0f172a;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .table th,
+[data-theme="dark"] .table td {
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba(255,255,255,0.03);
+}
+
+/* ── Dark mode: modal ── */
+[data-theme="dark"] .modal-content {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: var(--border-color);
+}
+
+/* ── Dark mode: pagination ── */
+[data-theme="dark"] .page-link {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .page-item.active .page-link {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .page-item.disabled .page-link {
+  background-color: var(--card-bg);
+  color: var(--text-muted);
+}
+
+/* ── Dark mode: navbar dropdown ── */
+[data-theme="dark"] .dropdown-menu {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: #0f172a;
+}
+
+[data-theme="dark"] .dropdown-divider {
+  border-color: #334155;
+}
+
+/* ── Focus visible (accessibility) ── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Share buttons ── */
+.share-btn {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .breadcrumb-item.active {
+  color: var(--text-secondary);
+}
+
+/* ── Skeleton loading ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--border-color) 25%, var(--body-bg) 50%, var(--border-color) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-text  { height: 1em; margin-bottom: 0.5rem; }
+.skeleton-title { height: 1.5em; width: 60%; margin-bottom: 0.75rem; }
+.skeleton-badge { height: 1.4em; width: 80px; border-radius: 50px; display: inline-block; }
+
+/* ── Filter tag count badge ── */
+.filter-count-badge {
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 50px;
+}
+
+/* ── Company verified badge ── */
+.badge-verified {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.7rem;
+}
+
+[data-theme="dark"] .badge-verified {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* ── Smooth card hover ── */
+.card {
+  transition: box-shadow 0.2s ease;
+}
+
+/* ── Job detail sidebar: no sticky on mobile ── */
+@media (max-width: 991px) {
+  .job-detail-sidebar .apply-card {
+    position: static !important;
+  }
+}
+
+/* ── High contrast focus for buttons ── */
+.btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* ── Admin analytics chart container ── */
+.chart-container {
+  position: relative;
+  height: 260px;
+}
+
+/* ── Email verified badge in navbar ── */
+.navbar .badge.bg-warning {
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 3px 5px;
+}
+
+/* ===================================================
+   INDUSTRY BADGE — colored pill, replaces plain text-muted
+   =================================================== */
+.industry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 50px;
+  letter-spacing: 0.01em;
+  /* default: indigo tint */
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+/* Industry-specific colors — light mode */
+.industry-badge[data-industry="Technology"],
+.industry-badge[data-industry="Software"],
+.industry-badge[data-industry="IT"] {
+  background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;
+}
+.industry-badge[data-industry="Finance"],
+.industry-badge[data-industry="Banking"],
+.industry-badge[data-industry="Fintech"] {
+  background: #f0fdf4; color: #15803d; border-color: #bbf7d0;
+}
+.industry-badge[data-industry="Healthcare"],
+.industry-badge[data-industry="Medical"],
+.industry-badge[data-industry="Pharma"] {
+  background: #fdf4ff; color: #7e22ce; border-color: #e9d5ff;
+}
+.industry-badge[data-industry="Education"],
+.industry-badge[data-industry="E-Learning"] {
+  background: #fff7ed; color: #c2410c; border-color: #fed7aa;
+}
+.industry-badge[data-industry="Marketing"],
+.industry-badge[data-industry="Media"],
+.industry-badge[data-industry="Advertising"] {
+  background: #fff1f2; color: #be123c; border-color: #fecdd3;
+}
+.industry-badge[data-industry="E-Commerce"],
+.industry-badge[data-industry="Retail"],
+.industry-badge[data-industry="Consumer Goods"] {
+  background: #fefce8; color: #a16207; border-color: #fde68a;
+}
+.industry-badge[data-industry="Manufacturing"],
+.industry-badge[data-industry="Engineering"],
+.industry-badge[data-industry="Construction"] {
+  background: #f0f9ff; color: #0369a1; border-color: #bae6fd;
+}
+.industry-badge[data-industry="Consulting"],
+.industry-badge[data-industry="Professional Services"] {
+  background: #f8fafc; color: #475569; border-color: #cbd5e1;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .industry-badge {
+  background: #1e1b4b; color: #a5b4fc; border-color: #3730a3;
+}
+[data-theme="dark"] .industry-badge[data-industry="Technology"],
+[data-theme="dark"] .industry-badge[data-industry="Software"],
+[data-theme="dark"] .industry-badge[data-industry="IT"] {
+  background: #1e3a5f; color: #93c5fd; border-color: #1d4ed8;
+}
+[data-theme="dark"] .industry-badge[data-industry="Finance"],
+[data-theme="dark"] .industry-badge[data-industry="Banking"],
+[data-theme="dark"] .industry-badge[data-industry="Fintech"] {
+  background: #052e16; color: #86efac; border-color: #166534;
+}
+[data-theme="dark"] .industry-badge[data-industry="Healthcare"],
+[data-theme="dark"] .industry-badge[data-industry="Medical"],
+[data-theme="dark"] .industry-badge[data-industry="Pharma"] {
+  background: #2e1065; color: #d8b4fe; border-color: #6b21a8;
+}
+[data-theme="dark"] .industry-badge[data-industry="Education"],
+[data-theme="dark"] .industry-badge[data-industry="E-Learning"] {
+  background: #431407; color: #fdba74; border-color: #9a3412;
+}
+[data-theme="dark"] .industry-badge[data-industry="Marketing"],
+[data-theme="dark"] .industry-badge[data-industry="Media"],
+[data-theme="dark"] .industry-badge[data-industry="Advertising"] {
+  background: #4c0519; color: #fda4af; border-color: #9f1239;
+}
+[data-theme="dark"] .industry-badge[data-industry="E-Commerce"],
+[data-theme="dark"] .industry-badge[data-industry="Retail"],
+[data-theme="dark"] .industry-badge[data-industry="Consumer Goods"] {
+  background: #422006; color: #fde68a; border-color: #92400e;
+}
+[data-theme="dark"] .industry-badge[data-industry="Manufacturing"],
+[data-theme="dark"] .industry-badge[data-industry="Engineering"],
+[data-theme="dark"] .industry-badge[data-industry="Construction"] {
+  background: #082f49; color: #7dd3fc; border-color: #0c4a6e;
+}

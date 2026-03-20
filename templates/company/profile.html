@@ -43,7 +43,11 @@
           <input type="file" name="logo" id="logoInput" class="d-none"
                  accept="image/*" onchange="previewLogo(this)">
           <h5>{{ company.name }}</h5>
-          <p class="text-muted small">{{ company.industry or 'Add your industry' }}</p>
+          {% if company.industry %}
+            <span class="industry-badge mt-1" data-industry="{{ company.industry }}"><i class="fas fa-industry" aria-hidden="true"></i>{{ company.industry }}</span>
+          {% else %}
+            <p class="text-muted small mb-0">Add your industry</p>
+          {% endif %}
         </div>
       </div>
     </div>

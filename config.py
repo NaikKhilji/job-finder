@@ -47,8 +47,8 @@ class Config:
     GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')
     LINKEDIN_OAUTH_CLIENT_ID     = os.environ.get('LINKEDIN_OAUTH_CLIENT_ID')
     LINKEDIN_OAUTH_CLIENT_SECRET = os.environ.get('LINKEDIN_OAUTH_CLIENT_SECRET')
-    # Required by Flask-Dance to allow http in development
-    OAUTHLIB_INSECURE_TRANSPORT = os.environ.get('OAUTHLIB_INSECURE_TRANSPORT', '1')
+    # Note: OAUTHLIB_INSECURE_TRANSPORT is set in os.environ directly in app.py
+    # (oauthlib reads from os.environ, not Flask config)
 
     # ── Social media links (shown in footer) ─────────────────────────────────
     SOCIAL_TWITTER  = os.environ.get('SOCIAL_TWITTER', '#')
