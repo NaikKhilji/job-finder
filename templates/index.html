@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}JobFinder — Find Your Dream Job{% endblock %}
+
+{% block content %}
+
+<!-- ===== HERO SECTION ===== -->
+<section class="hero-section">
+  <div class="hero-bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="container">
+    <div class="row align-items-center min-vh-80">
+      <div class="col-lg-7" data-aos="fade-right">
+        <div class="hero-badge mb-3">
+          <i class="fas fa-fire me-1 text-warning"></i>
+          <span>{{ total_jobs }}+ Jobs Available Now</span>
+        </div>
+        <h1 class="hero-title">
+          Find Your <span class="text-gradient">Dream Job</span><br>
+          That Fits Your Life
+        </h1>
+        <p class="hero-subtitle">
+          Connect with {{ total_companies }}+ top companies and discover opportunities
+          tailored to your skills and aspirations.
+        </p>
+
+        <!-- Search Form -->
+        <form class="hero-search-form" action="{{ url_for('jobs.listing') }}" method="GET">
+          <div class="search-box">
+            <div class="search-input-group">
+              <div class="search-field">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" class="search-input"
+                       placeholder="Job title, keyword, or company"
+                       value="{{ request.args.get('search', '') }}">
+              </div>
+              <div class="search-divider"></div>
+              <div class="search-field">
+                <i class="fas fa-map-marker-alt search-icon"></i>
+                <input type="text" name="location" class="search-input"
+                       placeholder="City, state, or remote"
+                       value="{{ request.args.get('location', '') }}">
+              </div>
+              <button type="submit" class="btn btn-primary search-btn">
+                <i class="fas fa-search me-2"></i>Search Jobs
+              </button>
+            </div>
+          </div>
+          <div class="popular-searches mt-3">
+            <span class="text-muted small">Popular:</span>
+            <a href="{{ url_for('jobs.listing', job_type='Remote') }}" class="tag-link">Remote</a>
+            <a href="{{ url_for('jobs.listing', search='Python') }}" class="tag-link">Python</a>
+            <a href="{{ url_for('jobs.listing', search='Designer') }}" class="tag-link">Designer</a>
+            <a href="{{ url_for('jobs.listing', search='Marketing') }}" class="tag-link">Marketing</a>
+            <a href="{{ url_for('jobs.listing', job_type='Full-time') }}" class="tag-link">Full-time</a>
+          </div>
+        </form>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block">
+        <div class="hero-illustration">
+          <div class="floating-card card-1">
+            <div class="d-flex align-items-center gap-2">
+              <div class="company-dot bg-primary"></div>
+              <div>
+                <div class="fw-semibold small">New Job Posted</div>
+                <div class="text-muted" style="font-size:11px">Senior Developer at TechCorp</div>
+              </div>
+            </div>
+          </div>
+          <div class="floating-card card-2">
+            <div class="text-success fw-semibold"><i class="fas fa-check-circle me-1"></i>Application Accepted!</div>
+            <div class="text-muted small">You're one step closer</div>
+          </div>
+          <div class="floating-card card-3">
+            <div class="d-flex gap-2 align-items-center">
+              <i class="fas fa-users text-primary fa-lg"></i>
+              <div>
+                <div class="fw-semibold small">{{ total_companies }}+ Companies</div>
+                <div class="text-muted" style="font-size:11px">Actively Hiring</div>
+              </div>
+            </div>
+          </div>
+          <!-- Main illustration -->
+          <div class="hero-img-wrapper">
+            <div class="hero-placeholder">
+              <i class="fas fa-briefcase"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS BAR ===== -->
+<section class="stats-bar">
+  <div class="container">
+    <div class="row g-4 text-center">
+      <div class="col-6 col-md-3">
+        <div class="stat-item">
+          <h3 class="stat-number">{{ total_jobs }}+</h3>
+          <p class="stat-label">Active Jobs</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-item">
+          <h3 class="stat-number">{{ total_companies }}+</h3>
+          <p class="stat-label">Companies</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-item">
+          <h3 class="stat-number">50K+</h3>
+          <p class="stat-label">Job Seekers</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-item">
+          <h3 class="stat-number">95%</h3>
+          <p class="stat-label">Success Rate</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== JOB TYPE CATEGORIES ===== -->
+<section class="py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <span class="section-badge">Explore by Category</span>
+      <h2 class="section-title">Browse by Job Type</h2>
+    </div>
+    <div class="row g-3">
+      {% set categories = [
+        ('Full-time', 'fa-briefcase', 'primary', 'Full-time positions with benefits'),
+        ('Part-time', 'fa-clock', 'success', 'Flexible part-time opportunities'),
+        ('Remote', 'fa-laptop-house', 'info', 'Work from anywhere in the world'),
+        ('Contract', 'fa-file-contract', 'warning', 'Short-term contract roles'),
+        ('Internship', 'fa-graduation-cap', 'danger', 'Start your career journey')
+      ] %}
+      {% for name, icon, color, desc in categories %}
+      <div class="col-6 col-md-4 col-lg">
+        <a href="{{ url_for('jobs.listing', job_type=name) }}" class="category-card text-decoration-none">
+          <div class="card category-card-inner h-100">
+            <div class="card-body text-center p-4">
+              <div class="category-icon bg-{{ color }}-soft mb-3">
+                <i class="fas {{ icon }} text-{{ color }}"></i>
+              </div>
+              <h6 class="fw-semibold mb-1">{{ name }}</h6>
+              <p class="text-muted small mb-0">{{ desc }}</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURED JOBS ===== -->
+<section class="py-5 bg-light-section">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <span class="section-badge">Latest Openings</span>
+      <h2 class="section-title">Featured Jobs</h2>
+    </div>
+
+    {% if featured_jobs %}
+    <div class="row g-4">
+      {% for job in featured_jobs %}
+      <div class="col-md-6 col-lg-4">
+        <div class="job-card card h-100">
+          <div class="card-body p-4">
+            <!-- Company & Logo -->
+            <div class="d-flex align-items-start justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="company-logo-sm">
+                  {% if job.company.logo != 'default_company.png' %}
+                    <img src="{{ url_for('main.uploaded_file', folder='logos', filename=job.company.logo) }}"
+                         alt="{{ job.company.name }}" class="logo-img-sm">
+                  {% else %}
+                    <div class="logo-placeholder-sm">
+                      {{ job.company.name[0] | upper }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-semibold">{{ job.company.name }}</h6>
+                  <small class="text-muted">
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ job.location }}
+                  </small>
+                </div>
+              </div>
+              <span class="badge job-type-badge badge-{{ job.job_type | lower | replace(' ', '-') | replace('-', '') }}">
+                {{ job.job_type }}
+              </span>
+            </div>
+
+            <!-- Job Title -->
+            <h5 class="job-title mb-2">
+              <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="text-decoration-none">
+                {{ job.title }}
+              </a>
+            </h5>
+
+            <!-- Description Preview -->
+            <p class="text-muted small mb-3">
+              {{ job.description[:120] }}{% if job.description|length > 120 %}...{% endif %}
+            </p>
+
+            <!-- Tags -->
+            {% if job.skills_required %}
+            <div class="job-tags mb-3">
+              {% for skill in job.skills_required.split(',')[:3] %}
+                <span class="tag">{{ skill.strip() }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Footer -->
+            <div class="d-flex align-items-center justify-content-between mt-auto">
+              <span class="salary-badge">
+                <i class="fas fa-dollar-sign me-1"></i>{{ job.salary_display }}
+              </span>
+              <a href="{{ url_for('jobs.detail', job_id=job.id) }}"
+                 class="btn btn-sm btn-primary">Apply Now</a>
+            </div>
+          </div>
+          <!-- Posted date -->
+          <div class="card-footer bg-transparent border-top-0 px-4 pb-3">
+            <small class="text-muted">
+              <i class="fas fa-clock me-1"></i>
+              Posted {{ job.created_at.strftime('%b %d, %Y') }}
+            </small>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="text-center mt-5">
+      <a href="{{ url_for('jobs.listing') }}" class="btn btn-outline-primary btn-lg px-5">
+        View All Jobs <i class="fas fa-arrow-right ms-2"></i>
+      </a>
+    </div>
+    {% else %}
+    <div class="empty-state text-center py-5">
+      <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+      <h5>No jobs posted yet</h5>
+      <p class="text-muted">Be the first to post a job on JobFinder!</p>
+      <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">Post a Job</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <span class="section-badge">Simple Process</span>
+      <h2 class="section-title">How JobFinder Works</h2>
+      <p class="section-desc">Get hired in 3 simple steps</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="how-card text-center">
+          <div class="step-number">01</div>
+          <div class="step-icon">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <h5 class="mt-4 mb-2">Create Account</h5>
+          <p class="text-muted">Sign up and build your profile with skills, experience, and resume.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="how-card text-center">
+          <div class="step-number">02</div>
+          <div class="step-icon">
+            <i class="fas fa-search"></i>
+          </div>
+          <h5 class="mt-4 mb-2">Browse & Filter</h5>
+          <p class="text-muted">Search thousands of jobs with powerful filters to find the perfect match.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="how-card text-center">
+          <div class="step-number">03</div>
+          <div class="step-icon">
+            <i class="fas fa-paper-plane"></i>
+          </div>
+          <h5 class="mt-4 mb-2">Apply & Get Hired</h5>
+          <p class="text-muted">Apply with one click and track your application status in real time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA SECTION ===== -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content text-center">
+      <h2 class="cta-title">Ready to Take the Next Step?</h2>
+      <p class="cta-desc">Join thousands of job seekers who found their dream job on JobFinder.</p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        {% if not current_user.is_authenticated %}
+          <a href="{{ url_for('auth.signup') }}" class="btn btn-light btn-lg px-5">
+            <i class="fas fa-user-plus me-2"></i>Create Free Account
+          </a>
+          <a href="{{ url_for('jobs.listing') }}" class="btn btn-outline-light btn-lg px-5">
+            Browse All Jobs
+          </a>
+        {% else %}
+          <a href="{{ url_for('jobs.listing') }}" class="btn btn-light btn-lg px-5">
+            <i class="fas fa-search me-2"></i>Find Jobs
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

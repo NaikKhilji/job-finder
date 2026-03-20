@@ -1,0 +1,295 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}User Dashboard — JobFinder{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('jobs.listing') }}" class="btn btn-primary btn-sm">
+  <i class="fas fa-search me-1"></i>Browse Jobs
+</a>
+{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('user.dashboard') }}" class="sidebar-link {% if request.endpoint == 'user.dashboard' %}active{% endif %}">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('user.profile') }}" class="sidebar-link {% if request.endpoint == 'user.profile' %}active{% endif %}">
+  <i class="fas fa-user"></i><span>My Profile</span>
+</a>
+<a href="{{ url_for('jobs.listing') }}" class="sidebar-link">
+  <i class="fas fa-search"></i><span>Browse Jobs</span>
+</a>
+<a href="{{ url_for('user.applied_jobs') }}" class="sidebar-link {% if request.endpoint == 'user.applied_jobs' %}active{% endif %}">
+  <i class="fas fa-file-alt"></i><span>Applied Jobs</span>
+  {% if app_count %}<span class="sidebar-badge">{{ app_count }}</span>{% endif %}
+</a>
+<a href="{{ url_for('user.saved_jobs') }}" class="sidebar-link {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}">
+  <i class="fas fa-bookmark"></i><span>Saved Jobs</span>
+  {% if saved_count %}<span class="sidebar-badge">{{ saved_count }}</span>{% endif %}
+</a>
+<a href="{{ url_for('user.job_alerts') }}" class="sidebar-link {% if request.endpoint == 'user.job_alerts' %}active{% endif %}">
+  <i class="fas fa-bell"></i><span>Job Alerts</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner mb-4">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <h4 class="mb-1">Welcome back, {{ current_user.name }}! 👋</h4>
+      <p class="text-muted mb-0">Here's your job search overview for today.</p>
+    </div>
+    <a href="{{ url_for('user.profile') }}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-edit me-1"></i>Complete Profile
+    </a>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-card-primary">
+      <div class="stat-card-icon"><i class="fas fa-file-alt"></i></div>
+      <div class="stat-card-body">
+        <div class="stat-card-number">{{ app_count }}</div>
+        <div class="stat-card-label">Total Applied</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-card-warning">
+      <div class="stat-card-icon"><i class="fas fa-clock"></i></div>
+      <div class="stat-card-body">
+        <div class="stat-card-number">{{ pending }}</div>
+        <div class="stat-card-label">Pending</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-card-success">
+      <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-card-body">
+        <div class="stat-card-number">{{ accepted }}</div>
+        <div class="stat-card-label">Accepted</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-card-info">
+      <div class="stat-card-icon"><i class="fas fa-bookmark"></i></div>
+      <div class="stat-card-body">
+        <div class="stat-card-number">{{ saved_count }}</div>
+        <div class="stat-card-label">Saved Jobs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Applications -->
+  <div class="col-lg-8">
+    <div class="card dashboard-card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-file-alt me-2 text-primary"></i>Recent Applications</h6>
+        <a href="{{ url_for('user.applied_jobs') }}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_applications %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Job</th>
+                <th>Company</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for app in recent_applications %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('jobs.detail', job_id=app.job_id) }}"
+                     class="fw-medium text-decoration-none">
+                    {{ app.job.title }}
+                  </a>
+                </td>
+                <td class="text-muted">{{ app.job.company.name }}</td>
+                <td class="text-muted small">{{ app.created_at.strftime('%b %d') }}</td>
+                <td>
+                  <span class="status-badge status-{{ app.status.lower() }}">
+                    {{ app.status }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state text-center py-5">
+          <i class="fas fa-file-alt fa-2x text-muted mb-3"></i>
+          <p class="text-muted mb-3">You haven't applied to any jobs yet.</p>
+          <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary btn-sm">Browse Jobs</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Completion & Quick Links -->
+  <div class="col-lg-4">
+    <!-- Profile Completion -->
+    <div class="card dashboard-card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-user-check me-2 text-primary"></i>Profile Strength</h6>
+      </div>
+      <div class="card-body">
+        {% set profile_score = namespace(value=0) %}
+        {% if current_user.name %}{% set profile_score.value = profile_score.value + 20 %}{% endif %}
+        {% if current_user.bio %}{% set profile_score.value = profile_score.value + 20 %}{% endif %}
+        {% if current_user.skills %}{% set profile_score.value = profile_score.value + 20 %}{% endif %}
+        {% if current_user.resume %}{% set profile_score.value = profile_score.value + 20 %}{% endif %}
+        {% if current_user.profile_picture and current_user.profile_picture != 'default_avatar.png' %}{% set profile_score.value = profile_score.value + 20 %}{% endif %}
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <small class="fw-medium">Profile Complete</small>
+            <small class="fw-bold text-primary">{{ profile_score.value }}%</small>
+          </div>
+          <div class="progress" style="height:8px;">
+            <div class="progress-bar bg-primary" style="width:{{ profile_score.value }}%"></div>
+          </div>
+        </div>
+
+        <ul class="profile-checklist">
+          <li class="{{ 'done' if current_user.name }}">
+            <i class="fas {{ 'fa-check-circle text-success' if current_user.name else 'fa-circle text-muted' }}"></i>
+            Add your name
+          </li>
+          <li class="{{ 'done' if current_user.bio }}">
+            <i class="fas {{ 'fa-check-circle text-success' if current_user.bio else 'fa-circle text-muted' }}"></i>
+            Write a bio
+          </li>
+          <li class="{{ 'done' if current_user.skills }}">
+            <i class="fas {{ 'fa-check-circle text-success' if current_user.skills else 'fa-circle text-muted' }}"></i>
+            Add skills
+          </li>
+          <li class="{{ 'done' if current_user.resume }}">
+            <i class="fas {{ 'fa-check-circle text-success' if current_user.resume else 'fa-circle text-muted' }}"></i>
+            Upload resume
+          </li>
+          <li class="{{ 'done' if current_user.profile_picture != 'default_avatar.png' }}">
+            <i class="fas {{ 'fa-check-circle text-success' if current_user.profile_picture != 'default_avatar.png' else 'fa-circle text-muted' }}"></i>
+            Upload photo
+          </li>
+        </ul>
+
+        {% if profile_score.value < 100 %}
+        <a href="{{ url_for('user.profile') }}" class="btn btn-primary btn-sm w-100 mt-2">
+          Complete Profile
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card dashboard-card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h6>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('jobs.listing') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-search me-2"></i>Find New Jobs
+          </a>
+          <a href="{{ url_for('user.profile') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-edit me-2"></i>Update Profile
+          </a>
+          <a href="{{ url_for('user.saved_jobs') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-bookmark me-2"></i>Saved Jobs ({{ saved_count }})
+          </a>
+          <a href="{{ url_for('user.job_alerts') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-bell me-2"></i>Job Alerts
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Interviews -->
+    {% if upcoming_interviews %}
+    <div class="card dashboard-card">
+      <div class="card-header">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-calendar-check me-2 text-success"></i>Upcoming Interviews</h6>
+      </div>
+      <div class="card-body p-0">
+        {% for iv in upcoming_interviews %}
+        <div class="px-4 py-3 {% if not loop.last %}border-bottom{% endif %}">
+          <div class="fw-semibold small mb-1">{{ iv.application.job.title }}</div>
+          <div class="text-muted small mb-2">
+            <i class="fas fa-building me-1"></i>{{ iv.application.job.company.name }}
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="badge status-badge status-accepted">{{ iv.interview_type }}</span>
+            <small class="text-muted">
+              <i class="fas fa-calendar me-1"></i>{{ iv.scheduled_at.strftime('%b %d, %Y') }}
+              <i class="fas fa-clock ms-2 me-1"></i>{{ iv.scheduled_at.strftime('%I:%M %p') }}
+            </small>
+          </div>
+          {% if iv.location_or_link %}
+          <div class="mt-1">
+            <a href="{{ iv.location_or_link }}" target="_blank" class="small text-primary">
+              <i class="fas fa-video me-1"></i>Join Meeting
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recommended Jobs -->
+{% if recommended_jobs %}
+<div class="card dashboard-card mt-4">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <h6 class="mb-0 fw-semibold"><i class="fas fa-star me-2 text-warning"></i>Recommended for You</h6>
+    <a href="{{ url_for('jobs.listing') }}" class="btn btn-sm btn-outline-primary">Browse All</a>
+  </div>
+  <div class="card-body p-0">
+    {% for job in recommended_jobs %}
+    <div class="d-flex align-items-start gap-3 p-3 {% if not loop.last %}border-bottom{% endif %}">
+      <!-- Company logo placeholder -->
+      <div class="company-logo-sm flex-shrink-0">
+        <div class="logo-placeholder-sm">{{ job.company.name[0]|upper }}</div>
+      </div>
+      <div class="flex-grow-1 min-width-0">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-1 mb-1">
+          <a href="{{ url_for('jobs.detail', job_id=job.id) }}"
+             class="fw-semibold text-decoration-none">{{ job.title }}</a>
+          <span class="badge job-type-badge badge-{{ job.job_type|lower|replace(' ','') }}">{{ job.job_type }}</span>
+        </div>
+        <div class="text-muted small mb-1">
+          <i class="fas fa-building me-1"></i>{{ job.company.name }}
+          <span class="mx-1">·</span>
+          <i class="fas fa-map-marker-alt me-1"></i>{{ job.location }}
+        </div>
+        {% if job.skills_required %}
+        <div class="d-flex flex-wrap gap-1">
+          {% for skill in job.skills_required.split(',')[:4] %}
+            <span class="tag">{{ skill.strip() }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <a href="{{ url_for('jobs.detail', job_id=job.id) }}"
+         class="btn btn-outline-primary btn-sm flex-shrink-0">Apply</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

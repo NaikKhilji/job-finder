@@ -1,0 +1,131 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Saved Jobs — JobFinder{% endblock %}
+{% block page_title %}Saved Jobs{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('user.dashboard') }}" class="sidebar-link">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('user.profile') }}" class="sidebar-link">
+  <i class="fas fa-user"></i><span>My Profile</span>
+</a>
+<a href="{{ url_for('jobs.listing') }}" class="sidebar-link">
+  <i class="fas fa-search"></i><span>Browse Jobs</span>
+</a>
+<a href="{{ url_for('user.applied_jobs') }}" class="sidebar-link">
+  <i class="fas fa-file-alt"></i><span>Applied Jobs</span>
+</a>
+<a href="{{ url_for('user.saved_jobs') }}" class="sidebar-link active">
+  <i class="fas fa-bookmark"></i><span>Saved Jobs</span>
+</a>
+<a href="{{ url_for('user.job_alerts') }}" class="sidebar-link">
+  <i class="fas fa-bell"></i><span>Job Alerts</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+{% if saved_jobs %}
+<div class="row g-3">
+  {% for saved in saved_jobs %}
+  <div class="col-md-6">
+    <div class="card dashboard-card job-card h-100">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="company-logo-sm">
+              {% if saved.job.company.logo != 'default_company.png' %}
+                <img src="{{ url_for('main.uploaded_file', folder='logos', filename=saved.job.company.logo) }}"
+                     alt="{{ saved.job.company.name }}" class="logo-img-sm">
+              {% else %}
+                <div class="logo-placeholder-sm">{{ saved.job.company.name[0] }}</div>
+              {% endif %}
+            </div>
+            <div>
+              <h6 class="mb-0 fw-semibold">{{ saved.job.company.name }}</h6>
+              <small class="text-muted">
+                <i class="fas fa-map-marker-alt me-1"></i>{{ saved.job.location }}
+              </small>
+            </div>
+          </div>
+          <span class="badge job-type-badge badge-{{ saved.job.job_type | lower | replace(' ', '') }}">
+            {{ saved.job.job_type }}
+          </span>
+        </div>
+
+        <h6 class="job-title mb-2">
+          <a href="{{ url_for('jobs.detail', job_id=saved.job_id) }}"
+             class="text-decoration-none">{{ saved.job.title }}</a>
+        </h6>
+
+        <p class="text-muted small mb-3">
+          {{ saved.job.description[:100] }}...
+        </p>
+
+        <div class="d-flex align-items-center justify-content-between">
+          <span class="salary-badge">{{ saved.job.salary_display }}</span>
+          <div class="d-flex gap-2">
+            <form method="POST" action="{{ url_for('user.remove_saved', job_id=saved.job_id) }}"
+                  class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('Remove from saved?')">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </form>
+            <a href="{{ url_for('jobs.detail', job_id=saved.job_id) }}"
+               class="btn btn-sm btn-primary">Apply Now</a>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent border-top-0 px-4 pb-3">
+        <small class="text-muted">
+          <i class="fas fa-bookmark me-1"></i>
+          Saved {{ saved.created_at.strftime('%b %d, %Y') }}
+        </small>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if pagination.has_prev %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('user.saved_jobs', page=pagination.prev_num) }}">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+    </li>
+    {% endif %}
+    {% for page_num in pagination.iter_pages() %}
+      {% if page_num %}
+        <li class="page-item {{ 'active' if page_num == pagination.page }}">
+          <a class="page-link" href="{{ url_for('user.saved_jobs', page=page_num) }}">{{ page_num }}</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('user.saved_jobs', page=pagination.next_num) }}">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state text-center py-5">
+  <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+  <h5>No saved jobs</h5>
+  <p class="text-muted">Save jobs you're interested in to view them later.</p>
+  <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary mt-2">
+    <i class="fas fa-search me-2"></i>Browse Jobs
+  </a>
+</div>
+{% endif %}
+{% endblock %}

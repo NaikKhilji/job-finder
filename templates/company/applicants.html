@@ -1,0 +1,233 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Applicants — {{ job.title }}{% endblock %}
+{% block page_title %}Applicants for "{{ job.title }}"{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('company.dashboard') }}" class="sidebar-link">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('company.profile') }}" class="sidebar-link">
+  <i class="fas fa-building"></i><span>Company Profile</span>
+</a>
+<a href="{{ url_for('company.post_job') }}" class="sidebar-link">
+  <i class="fas fa-plus-circle"></i><span>Post a Job</span>
+</a>
+<a href="{{ url_for('company.my_jobs') }}" class="sidebar-link active">
+  <i class="fas fa-list"></i><span>My Jobs</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Job Summary Card -->
+<div class="card dashboard-card mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h5 class="mb-1">{{ job.title }}</h5>
+        <div class="text-muted small">
+          <i class="fas fa-map-marker-alt me-1"></i>{{ job.location }}
+          <span class="mx-2">·</span>
+          <span class="badge job-type-badge badge-{{ job.job_type | lower | replace(' ', '') }}">{{ job.job_type }}</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('company.edit_job', job_id=job.id) }}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-edit me-1"></i>Edit Job
+        </a>
+        <a href="{{ url_for('company.my_jobs') }}" class="btn btn-sm btn-outline-primary">
+          <i class="fas fa-arrow-left me-1"></i>Back to Jobs
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{{ url_for('company.applicants', job_id=job.id) }}"
+     class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">
+     All ({{ applications|length }})
+  </a>
+  <a href="{{ url_for('company.applicants', job_id=job.id, status='Pending') }}"
+     class="btn btn-sm {{ 'btn-warning' if status_filter == 'Pending' else 'btn-outline-secondary' }}">
+     Pending
+  </a>
+  <a href="{{ url_for('company.applicants', job_id=job.id, status='Accepted') }}"
+     class="btn btn-sm {{ 'btn-success' if status_filter == 'Accepted' else 'btn-outline-secondary' }}">
+     Accepted
+  </a>
+  <a href="{{ url_for('company.applicants', job_id=job.id, status='Rejected') }}"
+     class="btn btn-sm {{ 'btn-danger' if status_filter == 'Rejected' else 'btn-outline-secondary' }}">
+     Rejected
+  </a>
+</div>
+
+{% if applications %}
+<div class="row g-3">
+  {% for app in applications %}
+  <div class="col-12">
+    <div class="card dashboard-card">
+      <div class="card-body p-4">
+        <div class="row align-items-start g-3">
+          <div class="col-auto appl-col-avatar text-center">
+            <div class="avatar-placeholder-md mx-auto">{{ app.applicant.name[0] | upper }}</div>
+          </div>
+          <div class="col col-md-5">
+            <h6 class="mb-1 fw-semibold">{{ app.applicant.name }}</h6>
+            <div class="text-muted small mb-2">
+              <i class="fas fa-envelope me-1"></i>{{ app.applicant.email }}
+            </div>
+            {% if app.applicant.location %}
+            <div class="text-muted small mb-2">
+              <i class="fas fa-map-marker-alt me-1"></i>{{ app.applicant.location }}
+            </div>
+            {% endif %}
+            {% if app.applicant.skills %}
+            <div class="d-flex flex-wrap gap-1 mt-2">
+              {% for skill in app.applicant.skills.split(',')[:4] %}
+                <span class="tag">{{ skill.strip() }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <!-- Resume link shown on mobile inline -->
+            {% if app.applicant.resume %}
+            <a href="{{ url_for('main.uploaded_file', folder='resumes', filename=app.applicant.resume) }}"
+               target="_blank" class="btn btn-xs btn-outline-primary mt-2 d-md-none">
+              <i class="fas fa-file-pdf me-1"></i>Resume
+            </a>
+            {% endif %}
+          </div>
+          <div class="col-md-3 appl-col-meta">
+            <div class="small text-muted mb-1">Applied</div>
+            <div class="small fw-medium">{{ app.created_at.strftime('%b %d, %Y') }}</div>
+            {% if app.applicant.resume %}
+            <a href="{{ url_for('main.uploaded_file', folder='resumes', filename=app.applicant.resume) }}"
+               target="_blank" class="btn btn-xs btn-outline-primary mt-2">
+              <i class="fas fa-file-pdf me-1"></i>Resume
+            </a>
+            {% endif %}
+          </div>
+          <div class="col-12 col-md-3 appl-col-actions text-md-end">
+            <span class="status-badge status-{{ app.status.lower() }} mb-3 d-inline-block">{{ app.status }}</span>
+            <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+              <form method="POST"
+                    action="{{ url_for('company.update_application', app_id=app.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="Accepted">
+                <button type="submit" class="btn btn-sm btn-success"
+                        {{ 'disabled' if app.status == 'Accepted' }}>
+                  <i class="fas fa-check me-1"></i>Accept
+                </button>
+              </form>
+              <form method="POST"
+                    action="{{ url_for('company.update_application', app_id=app.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="Rejected">
+                <button type="submit" class="btn btn-sm btn-danger"
+                        {{ 'disabled' if app.status == 'Rejected' }}>
+                  <i class="fas fa-times me-1"></i>Reject
+                </button>
+              </form>
+              <button type="button" class="btn btn-sm btn-outline-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#interviewModal{{ app.id }}">
+                <i class="fas fa-calendar-check me-1"></i>Interview
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {% if app.cover_letter %}
+        <div class="mt-3 interview-meta-section">
+          <small class="fw-medium d-block mb-1" style="color: var(--text-secondary);">Cover Letter:</small>
+          <p class="small mb-0" style="color: var(--text-secondary);">{{ app.cover_letter }}</p>
+        </div>
+        {% endif %}
+
+        {% if app.interviews %}
+        <div class="mt-3 interview-meta-section">
+          <small class="fw-medium d-block mb-2" style="color: var(--text-secondary);">Scheduled Interviews:</small>
+          {% for iv in app.interviews %}
+          <div class="d-flex align-items-center justify-content-between gap-2 mb-2 flex-wrap">
+            <div class="small d-flex align-items-center flex-wrap gap-2">
+              <span class="status-badge status-{{ 'accepted' if iv.status == 'Completed' else 'rejected' if iv.status == 'Cancelled' else 'pending' }}">{{ iv.status }}</span>
+              <span class="text-muted">{{ iv.interview_type }} &bull; {{ iv.scheduled_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+              {% if iv.location_or_link %}<a href="{{ iv.location_or_link }}" target="_blank" class="text-primary">Link</a>{% endif %}
+            </div>
+            {% if iv.status == 'Scheduled' %}
+            <div class="d-flex gap-1">
+              <form method="POST" action="{{ url_for('company.update_interview', interview_id=iv.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="Completed">
+                <button type="submit" class="btn btn-xs btn-outline-success">Done</button>
+              </form>
+              <form method="POST" action="{{ url_for('company.update_interview', interview_id=iv.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="Cancelled">
+                <button type="submit" class="btn btn-xs btn-outline-danger">Cancel</button>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Interview Modal -->
+  <div class="modal fade" id="interviewModal{{ app.id }}" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-calendar-check me-2 text-primary"></i>Schedule Interview</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('company.schedule_interview', app_id=app.id) }}">
+          <div class="modal-body">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <p class="text-muted small mb-3">Scheduling for <strong>{{ app.applicant.name }}</strong> — {{ job.title }}</p>
+            <div class="mb-3">
+              <label class="form-label fw-medium">Date &amp; Time *</label>
+              <input type="datetime-local" name="scheduled_at" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-medium">Interview Type</label>
+              <select name="interview_type" class="form-select">
+                <option value="Video">Video Call</option>
+                <option value="Phone">Phone Call</option>
+                <option value="In-person">In-Person</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-medium">Meeting Link / Location</label>
+              <input type="text" name="location_or_link" class="form-control"
+                     placeholder="https://zoom.us/... or Office address">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-medium">Notes for Candidate</label>
+              <textarea name="notes" class="form-control" rows="3"
+                        placeholder="What to prepare, what to bring..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-calendar-check me-1"></i>Schedule &amp; Notify
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state text-center py-5">
+  <i class="fas fa-users fa-3x text-muted mb-3"></i>
+  <h5>No applicants yet</h5>
+  <p class="text-muted">Applicants will appear here once they apply to this job.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,62 @@
+# Environment
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads (user files)
+uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Local packages (installed directly in project root — not needed, Railway installs from requirements.txt)
+flask/
+werkzeug/
+jinja2/
+click/
+itsdangerous/
+markupsafe/
+blinker/
+colorama/
+wtforms/
+flask_wtf/
+flask_login/
+flask_sqlalchemy/
+flask_mail/
+flask_migrate/
+flask_dance/
+sqlalchemy/
+alembic/
+requests/
+requests_oauthlib/
+oauthlib/
+pillow/
+PIL/
+pypdf/
+python_dotenv/
+email_validator/
+mako/
+certifi/
+charset_normalizer/
+idna/
+urllib3/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

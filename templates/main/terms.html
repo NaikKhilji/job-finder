@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service — JobFinder{% endblock %}
+
+{% block content %}
+<div class="static-page-hero">
+  <div class="container">
+    <h1 class="fw-bold">Terms of Service</h1>
+    <p class="text-muted">Last updated: March 2024</p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="static-page-content">
+
+        <div class="static-toc card mb-5">
+          <div class="card-body p-4">
+            <h6 class="fw-bold mb-3"><i class="fas fa-list me-2 text-primary"></i>Table of Contents</h6>
+            <ol class="mb-0 ps-3">
+              <li><a href="#acceptance">Acceptance of Terms</a></li>
+              <li><a href="#use">Use of the Platform</a></li>
+              <li><a href="#accounts">User Accounts</a></li>
+              <li><a href="#content">Content Policy</a></li>
+              <li><a href="#jobs">Job Listings</a></li>
+              <li><a href="#privacy">Privacy</a></li>
+              <li><a href="#liability">Limitation of Liability</a></li>
+              <li><a href="#termination">Termination</a></li>
+              <li><a href="#changes">Changes to Terms</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ol>
+          </div>
+        </div>
+
+        <section id="acceptance" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">1</span>Acceptance of Terms</h4>
+          <p>By accessing or using JobFinder ("the Platform", "we", "us", or "our"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Platform.</p>
+          <p>These terms apply to all users of the Platform, including job seekers, employers, and visitors.</p>
+        </section>
+
+        <section id="use" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">2</span>Use of the Platform</h4>
+          <p>You may use JobFinder only for lawful purposes and in accordance with these Terms. You agree not to:</p>
+          <ul class="terms-list">
+            <li>Use the Platform in any way that violates applicable law or regulation.</li>
+            <li>Post false, inaccurate, misleading, or deceptive content.</li>
+            <li>Impersonate any person or entity, or falsely claim an affiliation.</li>
+            <li>Collect or harvest data about other users without consent.</li>
+            <li>Transmit spam, unsolicited communications, or malicious code.</li>
+            <li>Attempt to gain unauthorized access to any part of the Platform.</li>
+          </ul>
+        </section>
+
+        <section id="accounts" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">3</span>User Accounts</h4>
+          <p>When you create an account, you must provide accurate and complete information. You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account.</p>
+          <p>You must notify us immediately at <strong>support@jobfinder.com</strong> of any unauthorized use of your account.</p>
+        </section>
+
+        <section id="content" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">4</span>Content Policy</h4>
+          <p>Users are solely responsible for the content they post. You grant JobFinder a non-exclusive, royalty-free license to display, reproduce, and distribute content you post on the Platform.</p>
+          <p>We reserve the right to remove any content that violates these Terms or is otherwise objectionable at our sole discretion.</p>
+        </section>
+
+        <section id="jobs" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">5</span>Job Listings</h4>
+          <p>Employers are responsible for the accuracy of their job listings. Job listings must describe genuine employment opportunities and must not discriminate on the basis of protected characteristics.</p>
+          <p>All job listings are subject to admin approval before becoming publicly visible. We reserve the right to reject or remove any listing at our discretion.</p>
+        </section>
+
+        <section id="privacy" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">6</span>Privacy</h4>
+          <p>Your use of the Platform is also governed by our <a href="{{ url_for('main.privacy') }}" class="text-primary">Privacy Policy</a>, which is incorporated into these Terms by reference.</p>
+        </section>
+
+        <section id="liability" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">7</span>Limitation of Liability</h4>
+          <p>JobFinder is provided on an "as is" and "as available" basis without warranties of any kind. To the fullest extent permitted by law, JobFinder shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Platform.</p>
+        </section>
+
+        <section id="termination" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">8</span>Termination</h4>
+          <p>We may suspend or terminate your account at any time if you violate these Terms or for any other reason at our discretion. You may delete your account at any time by contacting us.</p>
+        </section>
+
+        <section id="changes" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">9</span>Changes to Terms</h4>
+          <p>We may update these Terms from time to time. We will notify users of material changes by posting a notice on the Platform. Continued use after changes take effect constitutes acceptance of the new Terms.</p>
+        </section>
+
+        <section id="contact" class="mb-5">
+          <h4 class="section-heading"><span class="section-num">10</span>Contact</h4>
+          <p>If you have questions about these Terms, please contact us:</p>
+          <div class="contact-info-box card">
+            <div class="card-body p-4">
+              <p class="mb-1"><i class="fas fa-envelope me-2 text-primary"></i><strong>Email:</strong> legal@jobfinder.com</p>
+              <p class="mb-0"><i class="fas fa-map-marker-alt me-2 text-primary"></i><strong>Address:</strong> 123 Tech Street, San Francisco, CA 94105</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

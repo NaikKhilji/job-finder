@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}JobFinder — Find Your Dream Job{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% block navbar %}
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar navbar-expand-lg navbar-main sticky-top" id="mainNav">
+  <div class="container">
+    <!-- Brand -->
+    <a class="navbar-brand" href="{{ url_for('main.index') }}">
+      <i class="fas fa-briefcase me-2"></i>JobFinder
+    </a>
+
+    <!-- Mobile Toggle -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarNav" aria-controls="navbarNav"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Nav Items -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}"
+             href="{{ url_for('main.index') }}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.blueprint == 'jobs' %}active{% endif %}"
+             href="{{ url_for('jobs.listing') }}">Browse Jobs</a>
+        </li>
+      </ul>
+
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+        <!-- Dark mode toggle -->
+        <li class="nav-item">
+          <button class="btn btn-icon theme-toggle" id="themeToggle" title="Toggle dark mode">
+            <i class="fas fa-moon" id="themeIcon"></i>
+          </button>
+        </li>
+
+        {% if current_user.is_authenticated %}
+          <!-- Dashboard Link -->
+          <li class="nav-item">
+            {% if current_user.role == 'admin' %}
+              <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                <i class="fas fa-gauge-high me-1"></i>Dashboard
+              </a>
+            {% elif current_user.role == 'company' %}
+              <a class="nav-link" href="{{ url_for('company.dashboard') }}">
+                <i class="fas fa-gauge-high me-1"></i>Dashboard
+              </a>
+            {% else %}
+              <a class="nav-link" href="{{ url_for('user.dashboard') }}">
+                <i class="fas fa-gauge-high me-1"></i>Dashboard
+              </a>
+            {% endif %}
+          </li>
+
+          <!-- User Dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" id="userDropdown" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+              <img src="{{ url_for('main.uploaded_file', folder='avatars', filename=current_user.profile_picture) if current_user.profile_picture != 'default_avatar.png' else url_for('static', filename='images/default_avatar.png') }}"
+                   class="avatar-sm" alt="{{ current_user.name }}">
+              <span class="d-none d-md-inline">{{ current_user.name }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+              <li><h6 class="dropdown-header">{{ current_user.email }}</h6></li>
+              <li><hr class="dropdown-divider"></li>
+              {% if current_user.role == 'user' %}
+                <li><a class="dropdown-item" href="{{ url_for('user.profile') }}">
+                  <i class="fas fa-user me-2"></i>My Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('user.applied_jobs') }}">
+                  <i class="fas fa-file-alt me-2"></i>Applied Jobs</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('user.saved_jobs') }}">
+                  <i class="fas fa-bookmark me-2"></i>Saved Jobs</a></li>
+              {% elif current_user.role == 'company' %}
+                <li><a class="dropdown-item" href="{{ url_for('company.profile') }}">
+                  <i class="fas fa-building me-2"></i>Company Profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('company.post_job') }}">
+                  <i class="fas fa-plus me-2"></i>Post a Job</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('company.my_jobs') }}">
+                  <i class="fas fa-list me-2"></i>My Jobs</a></li>
+              {% endif %}
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                  <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
+              </li>
+            </ul>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('auth.login') }}">Log In</a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-primary btn-sm" href="{{ url_for('auth.signup') }}">Sign Up</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+<!-- ===== FLASH MESSAGES ===== -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999; margin-top: 70px">
+      {% for category, message in messages %}
+        <div class="toast align-items-center text-bg-{{ 'danger' if category == 'error' else category }} border-0 show"
+             role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">
+              <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' or category == 'error' %}fa-exclamation-circle{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-info-circle{% endif %} me-2"></i>
+              {{ message }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ===== MAIN CONTENT ===== -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ===== FOOTER ===== -->
+{% block footer %}
+<footer class="footer mt-auto">
+  <div class="container">
+    <div class="row g-4">
+
+      <!-- Brand + stats + social -->
+      <div class="col-lg-4 col-md-6">
+        <a class="footer-brand" href="{{ url_for('main.index') }}">
+          <i class="fas fa-briefcase me-2"></i>JobFinder
+        </a>
+        <p class="text-muted mt-3 mb-3">
+          Connecting talented professionals with amazing companies.<br>
+          Find your dream job today.
+        </p>
+        <div class="d-flex gap-3 text-muted small mb-3">
+          <span><i class="fas fa-briefcase me-1 text-primary"></i><strong>{{ footer_job_count }}</strong> live jobs</span>
+          <span><i class="fas fa-building me-1 text-primary"></i><strong>{{ footer_company_count }}</strong> companies</span>
+        </div>
+        <div class="social-links">
+          <a href="{{ config.get('SOCIAL_TWITTER', '#') }}" class="social-link" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+          <a href="{{ config.get('SOCIAL_LINKEDIN', '#') }}" class="social-link" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+          <a href="{{ config.get('SOCIAL_GITHUB', '#') }}" class="social-link" aria-label="GitHub"><i class="fab fa-github"></i></a>
+          <a href="{{ config.get('SOCIAL_FACEBOOK', '#') }}" class="social-link" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+        </div>
+      </div>
+
+      <!-- For Job Seekers -->
+      <div class="col-lg-2 col-md-6 col-6">
+        <h6 class="footer-heading">For Job Seekers</h6>
+        <ul class="list-unstyled footer-links">
+          <li><a href="{{ url_for('jobs.listing') }}">Browse Jobs</a></li>
+          {% if current_user.is_authenticated and current_user.role == 'user' %}
+            <li><a href="{{ url_for('user.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('user.profile') }}">My Profile</a></li>
+            <li><a href="{{ url_for('user.applied_jobs') }}">Applications</a></li>
+            <li><a href="{{ url_for('user.saved_jobs') }}">Saved Jobs</a></li>
+            <li><a href="{{ url_for('user.job_alerts') }}">Job Alerts</a></li>
+          {% else %}
+            <li><a href="{{ url_for('auth.signup') }}">Create Account</a></li>
+            <li><a href="{{ url_for('auth.login') }}">Sign In</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <!-- For Employers -->
+      <div class="col-lg-2 col-md-6 col-6">
+        <h6 class="footer-heading">For Employers</h6>
+        <ul class="list-unstyled footer-links">
+          {% if current_user.is_authenticated and current_user.role == 'company' %}
+            <li><a href="{{ url_for('company.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('company.post_job') }}">Post a Job</a></li>
+            <li><a href="{{ url_for('company.my_jobs') }}">Manage Jobs</a></li>
+            <li><a href="{{ url_for('company.profile') }}">Company Profile</a></li>
+          {% else %}
+            <li><a href="{{ url_for('auth.signup') }}">Post a Job</a></li>
+            <li><a href="{{ url_for('auth.signup') }}">Company Registration</a></li>
+          {% endif %}
+          <li><a href="{{ url_for('main.contact') }}">Contact Sales</a></li>
+        </ul>
+      </div>
+
+      <!-- Newsletter + quick links -->
+      <div class="col-lg-4 col-md-6">
+        <h6 class="footer-heading">Stay Updated</h6>
+        <p class="text-muted small">Get the latest job listings delivered to your inbox.</p>
+        <form class="newsletter-form mb-3" method="POST" action="{{ url_for('main.newsletter') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="input-group">
+            <input type="email" name="email" class="form-control"
+                   placeholder="Your email address" required>
+            <button class="btn btn-primary" type="submit">Subscribe</button>
+          </div>
+        </form>
+        <h6 class="footer-heading mt-3">Company</h6>
+        <ul class="list-unstyled footer-links">
+          <li><a href="{{ url_for('main.contact') }}">Contact Us</a></li>
+          <li><a href="{{ url_for('main.privacy') }}">Privacy Policy</a></li>
+          <li><a href="{{ url_for('main.terms') }}">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="footer-divider">
+    <div class="row align-items-center">
+      <div class="col-md-6 text-center text-md-start">
+        <p class="text-muted small mb-0">© {{ current_year }} JobFinder. All rights reserved.</p>
+      </div>
+      <div class="col-md-6 text-center text-md-end">
+        <a href="{{ url_for('main.privacy') }}" class="text-muted small me-3">Privacy Policy</a>
+        <a href="{{ url_for('main.terms') }}" class="text-muted small me-3">Terms of Service</a>
+        <a href="{{ url_for('main.contact') }}" class="text-muted small">Contact Us</a>
+      </div>
+    </div>
+  </div>
+</footer>
+{% endblock %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

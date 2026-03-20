@@ -1,0 +1,244 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}My Profile — JobFinder{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('user.dashboard') }}" class="sidebar-link">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('user.profile') }}" class="sidebar-link active">
+  <i class="fas fa-user"></i><span>My Profile</span>
+</a>
+<a href="{{ url_for('jobs.listing') }}" class="sidebar-link">
+  <i class="fas fa-search"></i><span>Browse Jobs</span>
+</a>
+<a href="{{ url_for('user.applied_jobs') }}" class="sidebar-link">
+  <i class="fas fa-file-alt"></i><span>Applied Jobs</span>
+</a>
+<a href="{{ url_for('user.saved_jobs') }}" class="sidebar-link">
+  <i class="fas fa-bookmark"></i><span>Saved Jobs</span>
+</a>
+<a href="{{ url_for('user.job_alerts') }}" class="sidebar-link {% if request.endpoint == 'user.job_alerts' %}active{% endif %}">
+  <i class="fas fa-bell"></i><span>Job Alerts</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<form method="POST" action="{{ url_for('user.profile') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="row g-4">
+    <!-- Profile Picture & Resume -->
+    <div class="col-lg-4">
+      <div class="card dashboard-card">
+        <div class="card-body text-center p-4">
+          <div class="profile-avatar-wrapper mb-3">
+            {% if current_user.profile_picture and current_user.profile_picture != 'default_avatar.png' %}
+              <img src="{{ url_for('main.uploaded_file', folder='avatars', filename=current_user.profile_picture) }}"
+                   alt="{{ current_user.name }}" class="profile-avatar" id="avatarPreview">
+            {% else %}
+              <div class="profile-avatar-placeholder" id="avatarPreview">
+                {{ current_user.name[0] | upper }}
+              </div>
+            {% endif %}
+            <label for="profilePictureInput" class="avatar-edit-btn" title="Change photo">
+              <i class="fas fa-camera"></i>
+            </label>
+          </div>
+          <input type="file" name="profile_picture" id="profilePictureInput"
+                 class="d-none" accept="image/*" onchange="previewAvatar(this)">
+
+          <h5 class="mb-0">{{ current_user.name }}</h5>
+          <p class="text-muted small mb-1">{{ current_user.email }}</p>
+          {% if current_user.location %}
+          <p class="text-muted small mb-2">
+            <i class="fas fa-map-marker-alt me-1"></i>{{ current_user.location }}
+          </p>
+          {% endif %}
+          {% if current_user.skills %}
+          <div class="d-flex flex-wrap gap-1 justify-content-center mb-3">
+            {% for skill in current_user.skills.split(',')[:6] %}
+              <span class="tag">{{ skill.strip() }}</span>
+            {% endfor %}
+            {% if current_user.skills.split(',')|length > 6 %}
+              <span class="tag text-muted">+{{ current_user.skills.split(',')|length - 6 }} more</span>
+            {% endif %}
+          </div>
+          {% else %}
+          <p class="text-muted small mb-3"><em>No skills added yet</em></p>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label fw-medium text-start w-100">
+              <i class="fas fa-file-pdf me-1 text-danger"></i>Resume (PDF)
+            </label>
+            {% if current_user.resume %}
+              <div class="resume-badge mb-2">
+                <i class="fas fa-file-pdf text-danger me-2"></i>
+                <span class="small">{{ current_user.resume }}</span>
+                <a href="{{ url_for('main.uploaded_file', folder='resumes', filename=current_user.resume) }}"
+                   target="_blank" class="ms-2 text-primary small">View</a>
+              </div>
+            {% endif %}
+            <input type="file" name="resume" class="form-control form-control-sm"
+                   accept=".pdf,.doc,.docx">
+            <small class="text-muted">PDF, DOC, DOCX up to 16MB</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="col-lg-8">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="mb-0 fw-semibold">Personal Information</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Full Name *</label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ current_user.name }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Email Address</label>
+              <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+              <small class="text-muted">Email cannot be changed</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Phone Number</label>
+              <input type="tel" name="phone" class="form-control"
+                     placeholder="+1 (555) 000-0000"
+                     value="{{ current_user.phone or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Location</label>
+              <input type="text" name="location" class="form-control"
+                     placeholder="City, Country"
+                     value="{{ current_user.location or '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-medium">LinkedIn URL</label>
+              <input type="url" name="linkedin" class="form-control"
+                     placeholder="https://linkedin.com/in/yourprofile"
+                     value="{{ current_user.linkedin or '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-medium">Professional Bio</label>
+              <textarea name="bio" class="form-control" rows="4"
+                        placeholder="Tell employers about yourself, your experience, and career goals...">{{ current_user.bio or '' }}</textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-medium">
+                Skills
+                <small class="text-muted">(comma separated)</small>
+              </label>
+              <div class="input-group mb-1">
+                <input type="text" name="skills" class="form-control"
+                       placeholder="Python, Flask, JavaScript, React, SQL..."
+                       value="{{ current_user.skills or '' }}" id="skillsInput">
+                {% if current_user.resume and current_user.resume.endswith('.pdf') %}
+                <button type="button" class="btn btn-outline-secondary" id="extractSkillsBtn"
+                        title="Auto-extract skills from your resume">
+                  <i class="fas fa-magic me-1"></i><span class="d-none d-sm-inline">Extract from Resume</span>
+                </button>
+                {% endif %}
+              </div>
+              <div class="skills-preview mt-2" id="skillsPreview"></div>
+              <div id="extractStatus" class="small text-muted mt-1"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+          <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewAvatar(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('avatarPreview');
+      if (preview.tagName === 'IMG') {
+        preview.src = e.target.result;
+      } else {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'profile-avatar';
+        img.id = 'avatarPreview';
+        preview.parentNode.replaceChild(img, preview);
+      }
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Skills preview
+const skillsInput = document.getElementById('skillsInput');
+const skillsPreview = document.getElementById('skillsPreview');
+function updateSkillsPreview() {
+  const raw = skillsInput.value.trim();
+  if (!raw) { skillsPreview.innerHTML = ''; return; }
+  const skills = raw.split(',').map(s => s.trim()).filter(Boolean);
+  const tags = skills.map(s => `<span class="tag me-1 mb-1">${s}</span>`).join('');
+  const warn = skills.length === 1 && raw.includes(' ')
+    ? `<small class="text-warning d-block mt-1"><i class="fas fa-exclamation-triangle me-1"></i>Separate skills with commas, e.g. Python, React, SQL</small>`
+    : '';
+  skillsPreview.innerHTML = tags + warn;
+}
+skillsInput.addEventListener('input', updateSkillsPreview);
+updateSkillsPreview();
+
+// Extract skills from resume
+const extractBtn = document.getElementById('extractSkillsBtn');
+const extractStatus = document.getElementById('extractStatus');
+if (extractBtn) {
+  extractBtn.addEventListener('click', function() {
+    extractBtn.disabled = true;
+    extractBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Extracting...';
+    extractStatus.textContent = '';
+    fetch('{{ url_for("user.extract_skills") }}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      extractBtn.disabled = false;
+      extractBtn.innerHTML = '<i class="fas fa-magic me-1"></i><span class="d-none d-sm-inline">Extract from Resume</span>';
+      if (data.error) {
+        extractStatus.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${data.error}</span>`;
+      } else if (data.skills.length > 0) {
+        const current = skillsInput.value.trim();
+        const currentSkills = current ? current.split(',').map(s => s.trim()) : [];
+        const newSkills = data.skills.filter(s => !currentSkills.map(c => c.toLowerCase()).includes(s.toLowerCase()));
+        if (newSkills.length > 0) {
+          skillsInput.value = current ? current + ', ' + newSkills.join(', ') : newSkills.join(', ');
+          updateSkillsPreview();
+          extractStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>Added ${newSkills.length} skills from your resume.</span>`;
+        } else {
+          extractStatus.innerHTML = `<span class="text-info"><i class="fas fa-info-circle me-1"></i>No new skills found — your resume may already be covered.</span>`;
+        }
+      } else {
+        extractStatus.innerHTML = `<span class="text-muted"><i class="fas fa-info-circle me-1"></i>No recognizable skills found in resume.</span>`;
+      }
+    })
+    .catch(() => {
+      extractBtn.disabled = false;
+      extractBtn.innerHTML = '<i class="fas fa-magic me-1"></i><span class="d-none d-sm-inline">Extract from Resume</span>';
+      extractStatus.innerHTML = '<span class="text-danger">Error extracting skills. Try again.</span>';
+    });
+  });
+}
+</script>
+{% endblock %}

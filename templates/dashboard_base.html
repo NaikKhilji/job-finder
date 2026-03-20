@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <a href="{{ url_for('main.index') }}" class="sidebar-brand">
+        <i class="fas fa-briefcase me-2"></i>JobFinder
+      </a>
+      <button class="sidebar-close d-lg-none" id="sidebarClose">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- User Info -->
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">
+        {% if current_user.profile_picture and current_user.profile_picture != 'default_avatar.png' %}
+          <img src="{{ url_for('main.uploaded_file', folder='avatars', filename=current_user.profile_picture) }}"
+               alt="{{ current_user.name }}" class="avatar-md">
+        {% else %}
+          <div class="avatar-placeholder-md">{{ current_user.name[0] | upper }}</div>
+        {% endif %}
+      </div>
+      <div class="sidebar-user-info">
+        <div class="fw-semibold text-truncate">{{ current_user.name }}</div>
+        <div class="small opacity-75 text-capitalize">{{ current_user.role }}</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% block sidebar_nav %}{% endblock %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="sidebar-link text-danger">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Sidebar Overlay (Mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Main Content -->
+  <div class="dashboard-main">
+    <!-- Top Bar -->
+    <div class="dashboard-topbar">
+      <button class="btn btn-icon sidebar-toggle d-lg-none" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="topbar-title">
+        {% block page_title %}Dashboard{% endblock %}
+      </div>
+      <div class="topbar-actions ms-auto d-flex gap-2 align-items-center">
+        {% block topbar_actions %}{% endblock %}
+      </div>
+    </div>
+
+    <!-- Dashboard Body -->
+    <div class="dashboard-body">
+      {% block dashboard_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

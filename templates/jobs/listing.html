@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}Browse Jobs — JobFinder{% endblock %}
+
+{% block content %}
+<div class="jobs-page">
+  <div class="jobs-header">
+    <div class="container">
+      <div class="row align-items-center py-4">
+        <div class="col-md-8">
+          <h2 class="mb-1 fw-bold">Browse Jobs</h2>
+          <p class="text-muted mb-0">
+            {{ pagination.total }} job{{ 's' if pagination.total != 1 }} found
+            {% if search %} for "<strong>{{ search }}</strong>"{% endif %}
+          </p>
+        </div>
+        <div class="col-md-4">
+          <!-- Quick search -->
+          <form method="GET" action="{{ url_for('jobs.listing') }}">
+            <div class="input-group">
+              <input type="text" name="search" class="form-control"
+                     placeholder="Search jobs..." value="{{ search }}">
+              <button class="btn btn-primary" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container py-4">
+    <div class="row g-4">
+
+      <!-- ===== SIDEBAR FILTERS ===== -->
+      <div class="col-lg-3">
+        <!-- Mobile toggle button -->
+        <button class="btn btn-outline-secondary filter-toggle-btn d-lg-none"
+                type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilterSidebar"
+                aria-expanded="false" aria-controls="mobileFilterSidebar">
+          <i class="fas fa-filter"></i> Filters
+          {% if job_type or location or experience or salary_min or salary_max %}
+            <span class="badge bg-primary ms-auto">Active</span>
+          {% endif %}
+        </button>
+        <div class="filter-sidebar collapse d-lg-block" id="mobileFilterSidebar">
+          <form method="GET" action="{{ url_for('jobs.listing') }}" id="filterForm">
+            <input type="hidden" name="search" value="{{ search }}">
+
+            <div class="filter-card card mb-3">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-filter me-2"></i>Filters</h6>
+                <a href="{{ url_for('jobs.listing') }}" class="text-muted small">Clear All</a>
+              </div>
+
+              <!-- Job Type -->
+              <div class="card-body border-bottom">
+                <h6 class="filter-heading">Job Type</h6>
+                {% for jt in job_types %}
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="job_type"
+                         id="jt_{{ jt | lower | replace(' ', '_') }}"
+                         value="{{ jt }}" {{ 'checked' if job_type == jt }}
+                         onchange="document.getElementById('filterForm').submit()">
+                  <label class="form-check-label" for="jt_{{ jt | lower | replace(' ', '_') }}">
+                    {{ jt }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+
+              <!-- Location -->
+              <div class="card-body border-bottom">
+                <h6 class="filter-heading">Location</h6>
+                <input type="text" name="location" class="form-control form-control-sm"
+                       placeholder="City or Remote" value="{{ location }}"
+                       onchange="document.getElementById('filterForm').submit()">
+              </div>
+
+              <!-- Experience Level -->
+              <div class="card-body border-bottom">
+                <h6 class="filter-heading">Experience Level</h6>
+                {% for level in experience_levels %}
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="radio" name="experience"
+                         id="exp_{{ level | lower | replace('-', '_') | replace(' ', '_') }}"
+                         value="{{ level }}" {{ 'checked' if experience == level }}
+                         onchange="document.getElementById('filterForm').submit()">
+                  <label class="form-check-label" for="exp_{{ level | lower | replace('-', '_') | replace(' ', '_') }}">
+                    {{ level }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+
+              <!-- Salary Range -->
+              <div class="card-body">
+                <h6 class="filter-heading">Salary Range (USD/yr)</h6>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label class="form-label small text-muted">Min</label>
+                    <input type="number" name="salary_min" class="form-control form-control-sm"
+                           placeholder="0" value="{{ salary_min or '' }}" min="0" step="5000">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small text-muted">Max</label>
+                    <input type="number" name="salary_max" class="form-control form-control-sm"
+                           placeholder="∞" value="{{ salary_max or '' }}" min="0" step="5000">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm w-100 mt-2">Apply</button>
+              </div>
+            </div>
+          </form>
+        </div><!-- /collapse -->
+      </div>
+
+      <!-- ===== JOB LISTINGS ===== -->
+      <div class="col-lg-9">
+        <!-- Active Filters -->
+        {% if search or location or job_type or salary_min or salary_max or experience %}
+        <div class="active-filters mb-3 d-flex flex-wrap gap-2 align-items-center">
+          <span class="text-muted small">Active filters:</span>
+          {% if search %}
+            <span class="filter-tag">
+              Search: {{ search }}
+              <a href="{{ url_for('jobs.listing', location=location, job_type=job_type, salary_min=salary_min, salary_max=salary_max, experience=experience) }}" class="filter-tag-remove">×</a>
+            </span>
+          {% endif %}
+          {% if job_type %}
+            <span class="filter-tag">
+              {{ job_type }}
+              <a href="{{ url_for('jobs.listing', search=search, location=location, salary_min=salary_min, salary_max=salary_max, experience=experience) }}" class="filter-tag-remove">×</a>
+            </span>
+          {% endif %}
+          {% if location %}
+            <span class="filter-tag">
+              {{ location }}
+              <a href="{{ url_for('jobs.listing', search=search, job_type=job_type, salary_min=salary_min, salary_max=salary_max, experience=experience) }}" class="filter-tag-remove">×</a>
+            </span>
+          {% endif %}
+          {% if experience %}
+            <span class="filter-tag">
+              {{ experience }}
+              <a href="{{ url_for('jobs.listing', search=search, location=location, job_type=job_type, salary_min=salary_min, salary_max=salary_max) }}" class="filter-tag-remove">×</a>
+            </span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if jobs %}
+        <div class="row g-3">
+          {% for job in jobs %}
+          <div class="col-12">
+            <div class="job-list-card card">
+              <div class="card-body p-4">
+                <div class="row align-items-center g-3">
+                  <!-- Logo -->
+                  <div class="col-auto">
+                    <div class="company-logo">
+                      {% if job.company.logo != 'default_company.png' %}
+                        <img src="{{ url_for('main.uploaded_file', folder='logos', filename=job.company.logo) }}"
+                             alt="{{ job.company.name }}" class="logo-img">
+                      {% else %}
+                        <div class="logo-placeholder">{{ job.company.name[0] | upper }}</div>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- Job Info -->
+                  <div class="col">
+                    <div class="job-card-inner d-flex align-items-start justify-content-between gap-2">
+                      <div class="job-card-info">
+                        <h5 class="job-title mb-1">
+                          <a href="{{ url_for('jobs.detail', job_id=job.id) }}"
+                             class="text-decoration-none">{{ job.title }}</a>
+                        </h5>
+                        <div class="text-muted small mb-2">
+                          <span><i class="fas fa-building me-1"></i>{{ job.company.name }}</span>
+                          <span class="mx-2">·</span>
+                          <span><i class="fas fa-map-marker-alt me-1"></i>{{ job.location }}</span>
+                          <span class="d-none d-sm-inline"><span class="mx-2">·</span>
+                          <i class="fas fa-clock me-1"></i>{{ job.created_at.strftime('%b %d') }}</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                          <span class="badge job-type-badge badge-{{ job.job_type | lower | replace(' ', '') }}">
+                            {{ job.job_type }}
+                          </span>
+                          <span class="badge experience-badge">{{ job.experience_level }}</span>
+                          <span class="salary-badge">{{ job.salary_display }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="job-card-actions d-flex gap-2 align-items-center flex-shrink-0">
+                        {% if current_user.is_authenticated and current_user.role == 'user' %}
+                          <!-- Save Button -->
+                          <form method="POST" action="{{ url_for('jobs.save_job', job_id=job.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="next" value="{{ url_for('jobs.listing', search=search, location=location, job_type=job_type, salary_min=salary_min, salary_max=salary_max, page=pagination.page) }}">
+                            <button type="submit" class="btn btn-icon {{ 'btn-bookmark-active' if job.id in saved_job_ids else 'btn-bookmark' }}"
+                                    title="{{ 'Remove from saved' if job.id in saved_job_ids else 'Save job' }}">
+                              <i class="{{ 'fas' if job.id in saved_job_ids else 'far' }} fa-bookmark"></i>
+                            </button>
+                          </form>
+                        {% endif %}
+                        <a href="{{ url_for('jobs.detail', job_id=job.id) }}"
+                           class="btn btn-primary btn-sm">
+                          {% if current_user.is_authenticated and job.id in applied_job_ids %}
+                            <i class="fas fa-check me-1"></i>Applied
+                          {% else %}
+                            Apply Now
+                          {% endif %}
+                        </a>
+                      </div>
+                    </div>
+
+                    <!-- Skills -->
+                    {% if job.skills_required %}
+                    <div class="job-tags mt-2">
+                      {% for skill in job.skills_required.split(',')[:5] %}
+                        <span class="tag">{{ skill.strip() }}</span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('jobs.listing', page=pagination.prev_num, search=search, location=location, job_type=job_type, salary_min=salary_min, salary_max=salary_max, experience=experience) }}">
+                <i class="fas fa-chevron-left"></i>
+              </a>
+            </li>
+            {% endif %}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if page_num %}
+                <li class="page-item {{ 'active' if page_num == pagination.page }}">
+                  <a class="page-link" href="{{ url_for('jobs.listing', page=page_num, search=search, location=location, job_type=job_type, salary_min=salary_min, salary_max=salary_max, experience=experience) }}">{{ page_num }}</a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('jobs.listing', page=pagination.next_num, search=search, location=location, job_type=job_type, salary_min=salary_min, salary_max=salary_max, experience=experience) }}">
+                <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state text-center py-5">
+          <i class="fas fa-search fa-3x text-muted mb-3"></i>
+          <h5>No jobs found</h5>
+          <p class="text-muted">Try adjusting your search filters or browse all available jobs.</p>
+          <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary mt-2">Clear Filters</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

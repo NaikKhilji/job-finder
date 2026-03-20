@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Verify OTP — JobFinder{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100 py-5">
+      <div class="col-md-5 col-lg-4">
+
+        <div class="text-center mb-4">
+          <a href="{{ url_for('main.index') }}" class="auth-logo">
+            <i class="fas fa-briefcase me-2"></i>JobFinder
+          </a>
+          <div class="auth-icon-circle mx-auto mt-3 mb-3">
+            <i class="fas fa-shield-halved fa-2x text-primary"></i>
+          </div>
+          <h2 class="auth-title">Enter Your OTP</h2>
+          <p class="text-muted">
+            We sent a 6-digit code to<br>
+            <strong>{{ email }}</strong>
+          </p>
+        </div>
+
+        <div class="auth-card card shadow-lg">
+          <div class="card-body p-4 p-md-5">
+            <form method="POST" action="{{ url_for('auth.verify_otp') }}" id="otpForm">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+              <div class="mb-4">
+                <label class="form-label fw-medium">6-Digit OTP</label>
+                <input type="text" name="otp" id="otpInput"
+                       class="form-control form-control-lg text-center fw-bold fs-4 letter-spacing-wide"
+                       placeholder="— — — — — —"
+                       maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+                       autocomplete="one-time-code" autofocus required>
+                <div class="form-text text-center mt-2">
+                  <i class="fas fa-clock me-1"></i>
+                  OTP expires in <span id="countdown" class="fw-semibold text-warning">10:00</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+                <i class="fas fa-check-circle me-2"></i>Verify OTP
+              </button>
+            </form>
+
+            <div class="text-center mt-4">
+              <p class="mb-1 small text-muted">Didn't receive the code?</p>
+              <a href="{{ url_for('auth.forgot_password') }}" class="fw-semibold text-primary small">
+                <i class="fas fa-rotate-left me-1"></i>Resend OTP
+              </a>
+            </div>
+
+            <div class="text-center mt-3">
+              <a href="{{ url_for('auth.login') }}" class="text-muted small">
+                <i class="fas fa-arrow-left me-1"></i>Back to Login
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block extra_js %}
+<script>
+// Only allow digits
+document.getElementById('otpInput').addEventListener('input', function () {
+  this.value = this.value.replace(/\D/g, '').slice(0, 6);
+  document.getElementById('submitBtn').disabled = this.value.length !== 6;
+});
+document.getElementById('submitBtn').disabled = true;
+
+// 10-minute countdown
+(function () {
+  let total = 10 * 60;
+  const el = document.getElementById('countdown');
+  const tick = setInterval(function () {
+    total--;
+    if (total <= 0) {
+      clearInterval(tick);
+      el.textContent = 'Expired';
+      el.classList.replace('text-warning', 'text-danger');
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('otpInput').disabled = true;
+      return;
+    }
+    const m = String(Math.floor(total / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
+    el.textContent = m + ':' + s;
+    if (total <= 60) el.classList.replace('text-warning', 'text-danger');
+  }, 1000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Company Profile — JobFinder{% endblock %}
+{% block page_title %}Company Profile{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('company.dashboard') }}" class="sidebar-link">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('company.profile') }}" class="sidebar-link active">
+  <i class="fas fa-building"></i><span>Company Profile</span>
+</a>
+<a href="{{ url_for('company.post_job') }}" class="sidebar-link">
+  <i class="fas fa-plus-circle"></i><span>Post a Job</span>
+</a>
+<a href="{{ url_for('company.my_jobs') }}" class="sidebar-link">
+  <i class="fas fa-list"></i><span>My Jobs</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<form method="POST" action="{{ url_for('company.profile') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card dashboard-card">
+        <div class="card-body text-center p-4">
+          <div class="profile-avatar-wrapper mb-3">
+            {% if company.logo != 'default_company.png' %}
+              <img src="{{ url_for('main.uploaded_file', folder='logos', filename=company.logo) }}"
+                   alt="{{ company.name }}" class="profile-avatar" id="logoPreview"
+                   style="border-radius:16px;">
+            {% else %}
+              <div class="logo-placeholder mx-auto" id="logoPreview"
+                   style="width:100px;height:100px;font-size:2.5rem;border-radius:16px;">
+                {{ company.name[0] if company.name else 'C' }}
+              </div>
+            {% endif %}
+            <label for="logoInput" class="avatar-edit-btn" title="Change logo">
+              <i class="fas fa-camera"></i>
+            </label>
+          </div>
+          <input type="file" name="logo" id="logoInput" class="d-none"
+                 accept="image/*" onchange="previewLogo(this)">
+          <h5>{{ company.name }}</h5>
+          <p class="text-muted small">{{ company.industry or 'Add your industry' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h6 class="mb-0 fw-semibold">Company Information</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Company Name *</label>
+              <input type="text" name="name" class="form-control"
+                     value="{{ company.name }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Website</label>
+              <input type="url" name="website" class="form-control"
+                     placeholder="https://yourcompany.com"
+                     value="{{ company.website or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Industry</label>
+              <select name="industry" class="form-select">
+                <option value="">Select Industry</option>
+                {% for ind in ['Technology', 'Finance', 'Healthcare', 'Education', 'Marketing',
+                               'Design', 'Sales', 'Engineering', 'Legal', 'Consulting', 'Other'] %}
+                  <option value="{{ ind }}" {{ 'selected' if company.industry == ind }}>{{ ind }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Company Size</label>
+              <select name="size" class="form-select">
+                <option value="">Select Size</option>
+                {% for size in ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'] %}
+                  <option value="{{ size }}" {{ 'selected' if company.size == size }}>{{ size }} employees</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Location</label>
+              <input type="text" name="location" class="form-control"
+                     placeholder="City, Country"
+                     value="{{ company.location or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium">Founded Year</label>
+              <input type="text" name="founded" class="form-control"
+                     placeholder="2020"
+                     value="{{ company.founded or '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-medium">Company Description</label>
+              <textarea name="description" class="form-control" rows="5"
+                        placeholder="Describe your company, culture, mission, and what makes you unique...">{{ company.description or '' }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewLogo(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('logoPreview');
+      if (preview.tagName === 'IMG') {
+        preview.src = e.target.result;
+      } else {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'profile-avatar';
+        img.style.borderRadius = '16px';
+        img.id = 'logoPreview';
+        preview.parentNode.replaceChild(img, preview);
+      }
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Job Alerts — JobFinder{% endblock %}
+{% block page_title %}Job Alerts{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('jobs.listing') }}" class="btn btn-primary btn-sm">
+  <i class="fas fa-search me-1"></i>Browse Jobs
+</a>
+{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('user.dashboard') }}" class="sidebar-link">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('user.profile') }}" class="sidebar-link">
+  <i class="fas fa-user"></i><span>My Profile</span>
+</a>
+<a href="{{ url_for('jobs.listing') }}" class="sidebar-link">
+  <i class="fas fa-search"></i><span>Browse Jobs</span>
+</a>
+<a href="{{ url_for('user.applied_jobs') }}" class="sidebar-link">
+  <i class="fas fa-file-alt"></i><span>Applied Jobs</span>
+</a>
+<a href="{{ url_for('user.saved_jobs') }}" class="sidebar-link">
+  <i class="fas fa-bookmark"></i><span>Saved Jobs</span>
+</a>
+<a href="{{ url_for('user.job_alerts') }}" class="sidebar-link active">
+  <i class="fas fa-bell"></i><span>Job Alerts</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+  <!-- Create Alert Form -->
+  <div class="col-lg-4">
+    <div class="card dashboard-card">
+      <div class="card-header">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-plus-circle me-2 text-primary"></i>Create Alert</h6>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('user.create_job_alert') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label class="form-label fw-medium">Keywords</label>
+            <input type="text" name="keywords" class="form-control"
+                   placeholder="e.g. Python Developer, React">
+            <small class="text-muted">Job title, skill, or keyword</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">Location</label>
+            <input type="text" name="location" class="form-control"
+                   placeholder="e.g. New York, Remote">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-medium">Job Type</label>
+            <select name="job_type" class="form-select">
+              <option value="">Any type</option>
+              {% for jt in job_types %}
+                <option value="{{ jt }}">{{ jt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-bell me-2"></i>Create Alert
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Alerts -->
+  <div class="col-lg-8">
+    <div class="card dashboard-card">
+      <div class="card-header">
+        <h6 class="mb-0 fw-semibold"><i class="fas fa-bell me-2 text-primary"></i>Your Alerts ({{ alerts|length }})</h6>
+      </div>
+      <div class="card-body {% if not alerts %}p-0{% endif %}">
+        {% if alerts %}
+          <div class="list-group list-group-flush">
+            {% for alert in alerts %}
+            <div class="list-group-item px-4 py-3">
+              <div class="d-flex align-items-start justify-content-between gap-3">
+                <div class="flex-grow-1">
+                  <div class="d-flex flex-wrap gap-2 mb-1">
+                    {% if alert.keywords %}
+                      <span class="badge bg-primary-soft text-primary">
+                        <i class="fas fa-search me-1"></i>{{ alert.keywords }}
+                      </span>
+                    {% endif %}
+                    {% if alert.location %}
+                      <span class="badge bg-success-soft text-success">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ alert.location }}
+                      </span>
+                    {% endif %}
+                    {% if alert.job_type %}
+                      <span class="badge bg-info-soft text-info">
+                        <i class="fas fa-briefcase me-1"></i>{{ alert.job_type }}
+                      </span>
+                    {% endif %}
+                  </div>
+                  <small class="text-muted">
+                    Created {{ alert.created_at.strftime('%b %d, %Y') }}
+                  </small>
+                </div>
+                <form method="POST" action="{{ url_for('user.delete_job_alert', alert_id=alert.id) }}"
+                      onsubmit="return confirm('Delete this alert?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <!-- Browse matching jobs button -->
+          <div class="p-3 text-center border-top">
+            <a href="{{ url_for('jobs.listing') }}" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-search me-1"></i>Browse Matching Jobs
+            </a>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+            <p class="text-muted mb-0">No job alerts yet.</p>
+            <p class="text-muted small">Create an alert to get notified when new matching jobs are posted.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

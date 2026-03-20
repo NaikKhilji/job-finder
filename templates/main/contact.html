@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Contact Us — JobFinder{% endblock %}
+
+{% block content %}
+<div class="static-page-hero">
+  <div class="container">
+    <h1 class="fw-bold">Contact Us</h1>
+    <p class="text-muted">Have a question or need help? We're here for you.</p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-5 justify-content-center">
+
+    <!-- Contact Info -->
+    <div class="col-lg-4">
+      <div class="sticky-top" style="top: 90px;">
+        <h5 class="fw-bold mb-4">Get in Touch</h5>
+
+        <div class="contact-info-list">
+          <div class="contact-info-item">
+            <div class="contact-info-icon bg-primary-soft">
+              <i class="fas fa-envelope text-primary"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">Email Support</div>
+              <a href="mailto:support@jobfinder.com" class="text-muted small">support@jobfinder.com</a>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon bg-success-soft">
+              <i class="fas fa-clock text-success"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">Response Time</div>
+              <span class="text-muted small">Within 24 hours on business days</span>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon bg-info-soft">
+              <i class="fas fa-map-marker-alt text-info"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">Office</div>
+              <span class="text-muted small">123 Tech Street, San Francisco, CA 94105</span>
+            </div>
+          </div>
+
+          <div class="contact-info-item">
+            <div class="contact-info-icon bg-warning-soft">
+              <i class="fas fa-headset text-warning"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">Phone</div>
+              <a href="tel:+14155550123" class="text-muted small">+1 (415) 555-0123</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-top">
+          <h6 class="fw-bold mb-3">Follow Us</h6>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Form -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body p-4 p-md-5">
+          <h5 class="fw-bold mb-1">Send us a Message</h5>
+          <p class="text-muted small mb-4">Fill out the form below and we'll get back to you as soon as possible.</p>
+
+          <form method="POST" action="{{ url_for('main.contact') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Your Name *</label>
+                <input type="text" name="name" class="form-control"
+                       placeholder="John Doe" required
+                       value="{{ form_data.get('name', '') }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-medium">Email Address *</label>
+                <input type="email" name="email" class="form-control"
+                       placeholder="you@example.com" required
+                       value="{{ form_data.get('email', '') }}">
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-medium">Subject *</label>
+                <select name="subject" class="form-select" required>
+                  <option value="">Select a topic...</option>
+                  {% set subjects = [
+                    'General Inquiry',
+                    'Technical Support',
+                    'Account Issue',
+                    'Job Posting Question',
+                    'Report Abuse / Spam',
+                    'Partnership Inquiry',
+                    'Other'
+                  ] %}
+                  {% for s in subjects %}
+                    <option value="{{ s }}" {{ 'selected' if form_data.get('subject') == s }}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-medium">Message *</label>
+                <textarea name="message" class="form-control" rows="6"
+                          placeholder="Tell us how we can help..."
+                          required minlength="10">{{ form_data.get('message', '') }}</textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                  <i class="fas fa-paper-plane me-2"></i>Send Message
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- FAQ Teaser -->
+      <div class="mt-4">
+        <h6 class="fw-semibold mb-3">Frequently Asked Questions</h6>
+        <div class="accordion" id="faqAccordion">
+          {% set faqs = [
+            ('How do I reset my password?', 'Go to the login page and click "Forgot password?" to receive a reset link.'),
+            ('How do I delete my account?', 'Contact us using the form above and we will process your deletion request within 48 hours.'),
+            ('Why is my job pending approval?', 'All job listings are reviewed by our admin team before being published, typically within 24 hours.'),
+            ('Can I apply to jobs without a resume?', 'Yes, but uploading a resume significantly improves your chances of being noticed by employers.')
+          ] %}
+          {% for q, a in faqs %}
+          <div class="accordion-item faq-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed faq-btn" type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#faq{{ loop.index }}">
+                {{ q }}
+              </button>
+            </h2>
+            <div id="faq{{ loop.index }}" class="accordion-collapse collapse"
+                 data-bs-parent="#faqAccordion">
+              <div class="accordion-body text-muted small">{{ a }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

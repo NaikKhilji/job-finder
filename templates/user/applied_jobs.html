@@ -1,0 +1,175 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Applied Jobs — JobFinder{% endblock %}
+{% block page_title %}Applied Jobs{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{{ url_for('user.dashboard') }}" class="sidebar-link">
+  <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+</a>
+<a href="{{ url_for('user.profile') }}" class="sidebar-link">
+  <i class="fas fa-user"></i><span>My Profile</span>
+</a>
+<a href="{{ url_for('jobs.listing') }}" class="sidebar-link">
+  <i class="fas fa-search"></i><span>Browse Jobs</span>
+</a>
+<a href="{{ url_for('user.applied_jobs') }}" class="sidebar-link active">
+  <i class="fas fa-file-alt"></i><span>Applied Jobs</span>
+</a>
+<a href="{{ url_for('user.saved_jobs') }}" class="sidebar-link">
+  <i class="fas fa-bookmark"></i><span>Saved Jobs</span>
+</a>
+<a href="{{ url_for('user.job_alerts') }}" class="sidebar-link">
+  <i class="fas fa-bell"></i><span>Job Alerts</span>
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Filter Bar -->
+<div class="card dashboard-card mb-4">
+  <div class="card-body py-3">
+    <form method="GET" class="d-flex gap-2 flex-wrap align-items-center">
+      <span class="fw-medium me-2">Filter by Status:</span>
+      <a href="{{ url_for('user.applied_jobs') }}"
+         class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-secondary' }}">All</a>
+      <a href="{{ url_for('user.applied_jobs', status='Pending') }}"
+         class="btn btn-sm {{ 'btn-warning' if status_filter == 'Pending' else 'btn-outline-secondary' }}">Pending</a>
+      <a href="{{ url_for('user.applied_jobs', status='Accepted') }}"
+         class="btn btn-sm {{ 'btn-success' if status_filter == 'Accepted' else 'btn-outline-secondary' }}">Accepted</a>
+      <a href="{{ url_for('user.applied_jobs', status='Rejected') }}"
+         class="btn btn-sm {{ 'btn-danger' if status_filter == 'Rejected' else 'btn-outline-secondary' }}">Rejected</a>
+    </form>
+  </div>
+</div>
+
+{% if applications %}
+<div class="row g-3">
+  {% for app in applications %}
+  <div class="col-12">
+    <div class="card dashboard-card application-card">
+      <div class="card-body p-4">
+        <div class="row align-items-center g-3">
+          <div class="col-auto app-col-logo">
+            <div class="company-logo-sm mx-auto">
+              {% if app.job.company.logo != 'default_company.png' %}
+                <img src="{{ url_for('main.uploaded_file', folder='logos', filename=app.job.company.logo) }}"
+                     alt="{{ app.job.company.name }}" class="logo-img-sm">
+              {% else %}
+                <div class="logo-placeholder-sm">{{ app.job.company.name[0] }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col col-md-5">
+            <h6 class="mb-1">
+              <a href="{{ url_for('jobs.detail', job_id=app.job_id) }}"
+                 class="text-decoration-none fw-semibold">{{ app.job.title }}</a>
+            </h6>
+            <div class="text-muted small">
+              <i class="fas fa-building me-1"></i>{{ app.job.company.name }}
+              <span class="mx-2">·</span>
+              <i class="fas fa-map-marker-alt me-1"></i>{{ app.job.location }}
+            </div>
+            <!-- Visible on mobile only -->
+            <div class="d-flex align-items-center gap-2 mt-1 d-md-none">
+              <span class="badge job-type-badge badge-{{ app.job.job_type | lower | replace(' ', '') }}">{{ app.job.job_type }}</span>
+              <small class="text-muted">{{ app.created_at.strftime('%b %d, %Y') }}</small>
+            </div>
+          </div>
+          <div class="col-md-2 text-center app-col-type">
+            <span class="badge job-type-badge badge-{{ app.job.job_type | lower | replace(' ', '') }}">
+              {{ app.job.job_type }}
+            </span>
+          </div>
+          <div class="col-md-2 text-center app-col-date">
+            <div class="small text-muted">Applied on</div>
+            <div class="fw-medium small">{{ app.created_at.strftime('%b %d, %Y') }}</div>
+          </div>
+          <div class="col-auto col-md-2 text-end text-md-center">
+            <span class="status-badge status-{{ app.status.lower() }} d-inline-block">
+              {% if app.status == 'Pending' %}
+                <i class="fas fa-clock me-1"></i>
+              {% elif app.status == 'Accepted' %}
+                <i class="fas fa-check me-1"></i>
+              {% else %}
+                <i class="fas fa-times me-1"></i>
+              {% endif %}
+              {{ app.status }}
+            </span>
+          </div>
+        </div>
+        {% if app.cover_letter %}
+        <div class="mt-3 pt-3 border-top">
+          <small class="text-muted">
+            <i class="fas fa-quote-left me-1"></i>
+            {{ app.cover_letter[:150] }}{% if app.cover_letter|length > 150 %}...{% endif %}
+          </small>
+        </div>
+        {% endif %}
+        {% set upcoming = app.interviews | selectattr('status', 'equalto', 'Scheduled') | list %}
+        {% if upcoming %}
+        <div class="mt-3 interview-meta-section">
+          {% for iv in upcoming %}
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <span class="status-badge status-accepted">
+              <i class="fas fa-calendar-check me-1"></i>Interview Scheduled
+            </span>
+            <small class="text-muted">
+              {{ iv.interview_type }} &bull; {{ iv.scheduled_at.strftime('%b %d, %Y at %I:%M %p') }}
+            </small>
+            {% if iv.location_or_link %}
+            <a href="{{ iv.location_or_link }}" target="_blank"
+               class="btn btn-xs btn-outline-primary">
+              <i class="fas fa-video me-1"></i>Join
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if pagination.has_prev %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('user.applied_jobs', page=pagination.prev_num, status=status_filter) }}">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+    </li>
+    {% endif %}
+    {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+      {% if page_num %}
+        <li class="page-item {{ 'active' if page_num == pagination.page }}">
+          <a class="page-link" href="{{ url_for('user.applied_jobs', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for('user.applied_jobs', page=pagination.next_num, status=status_filter) }}">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state text-center py-5">
+  <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+  <h5>No applications yet</h5>
+  <p class="text-muted">Start applying to jobs to track your applications here.</p>
+  <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary mt-2">
+    <i class="fas fa-search me-2"></i>Browse Jobs
+  </a>
+</div>
+{% endif %}
+{% endblock %}
